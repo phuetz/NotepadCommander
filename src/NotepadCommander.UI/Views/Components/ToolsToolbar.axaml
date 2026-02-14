@@ -1,0 +1,110 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NotepadCommander.UI.ViewModels"
+             x:Class="NotepadCommander.UI.Views.Components.ToolsToolbar"
+             x:DataType="vm:ToolsToolbarViewModel">
+
+    <StackPanel Orientation="Horizontal" Spacing="16" Margin="8,4">
+        <!-- Groupe Comparer -->
+        <Border Classes="ribbon-group">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Button Classes="toolbar-button" Command="{Binding CompareFilesCommand}" ToolTip.Tip="Comparer deux fichiers">
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <TextBlock Text="⇄" FontSize="18" HorizontalAlignment="Center" />
+                            <TextBlock Text="Comparer" FontSize="10" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <TextBlock Classes="ribbon-group-title" Text="Comparer" />
+            </StackPanel>
+        </Border>
+
+        <!-- Groupe Macros -->
+        <Border Classes="ribbon-group">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Button Classes="toolbar-button" Command="{Binding ToggleRecordingCommand}"
+                            ToolTip.Tip="Enregistrer/Arrêter macro">
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding RecordingIcon}" FontSize="18" HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding RecordingLabel}" FontSize="10" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="toolbar-button" Command="{Binding PlayMacroCommand}"
+                            ToolTip.Tip="Rejouer la dernière macro">
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <TextBlock Text="▶" FontSize="18" HorizontalAlignment="Center" />
+                            <TextBlock Text="Rejouer" FontSize="10" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <TextBlock Classes="ribbon-group-title" Text="Macros" />
+            </StackPanel>
+        </Border>
+
+        <!-- Groupe Snippets -->
+        <Border Classes="ribbon-group">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Button Classes="toolbar-button" Command="{Binding ManageSnippetsCommand}"
+                            ToolTip.Tip="Gérer les snippets">
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <TextBlock Text="✂" FontSize="18" HorizontalAlignment="Center" />
+                            <TextBlock Text="Snippets" FontSize="10" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <TextBlock Classes="ribbon-group-title" Text="Snippets" />
+            </StackPanel>
+        </Border>
+
+        <!-- Groupe Terminal -->
+        <Border Classes="ribbon-group">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Button Classes="toolbar-button" Command="{Binding ToggleTerminalCommand}"
+                            ToolTip.Tip="Ouvrir/Fermer le terminal">
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <TextBlock Text="⌨" FontSize="18" HorizontalAlignment="Center" />
+                            <TextBlock Text="Terminal" FontSize="10" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <TextBlock Classes="ribbon-group-title" Text="Terminal" />
+            </StackPanel>
+        </Border>
+
+        <!-- Groupe Aperçu -->
+        <Border Classes="ribbon-group">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Button Classes="toolbar-button" Command="{Binding ToggleMarkdownPreviewCommand}"
+                            ToolTip.Tip="Aperçu Markdown">
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <TextBlock Text="👁" FontSize="18" HorizontalAlignment="Center" />
+                            <TextBlock Text="Markdown" FontSize="10" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <TextBlock Classes="ribbon-group-title" Text="Aperçu" />
+            </StackPanel>
+        </Border>
+
+        <!-- Groupe Calculer -->
+        <Border Classes="ribbon-group">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Button Classes="toolbar-button" Command="{Binding CalculateSelectionCommand}"
+                            ToolTip.Tip="Calculer la sélection">
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <TextBlock Text="🔢" FontSize="18" HorizontalAlignment="Center" />
+                            <TextBlock Text="Calculer" FontSize="10" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <TextBlock Classes="ribbon-group-title" Text="Calculer" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

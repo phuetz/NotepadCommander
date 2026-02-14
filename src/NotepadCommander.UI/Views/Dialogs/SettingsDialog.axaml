@@ -1,0 +1,80 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="NotepadCommander.UI.Views.Dialogs.SettingsDialog"
+        Title="Preferences"
+        Width="550" Height="500"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+    <Border Padding="24" Background="{StaticResource ToolbarBrush}">
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Text="Preferences"
+                       FontSize="20" FontWeight="Bold" Margin="0,0,0,16"
+                       Foreground="{StaticResource PrimaryBrush}" />
+
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                        HorizontalAlignment="Right" Spacing="8" Margin="0,16,0,0">
+                <Button Content="Reinitialiser" Name="ResetButton" Width="120" />
+                <Button Content="Annuler" Name="CancelButton" Width="100" />
+                <Button Content="Enregistrer" Name="SaveButton" Classes="btn-primary" Width="120" />
+            </StackPanel>
+
+            <ScrollViewer>
+                <StackPanel Spacing="16">
+                    <!-- Editeur -->
+                    <TextBlock Text="Editeur" FontWeight="Bold" FontSize="14" />
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="200,*">
+                            <TextBlock Text="Taille de police" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Column="1" Name="FontSizeInput" Minimum="8" Maximum="72"
+                                           Value="14" Width="120" HorizontalAlignment="Left" />
+                        </Grid>
+                        <Grid ColumnDefinitions="200,*">
+                            <TextBlock Text="Famille de police" VerticalAlignment="Center" />
+                            <TextBox Grid.Column="1" Name="FontFamilyInput"
+                                     Text="Cascadia Code" Width="200" HorizontalAlignment="Left" />
+                        </Grid>
+                        <Grid ColumnDefinitions="200,*">
+                            <TextBlock Text="Numeros de ligne" VerticalAlignment="Center" />
+                            <CheckBox Grid.Column="1" Name="ShowLineNumbersCheck" IsChecked="True" />
+                        </Grid>
+                        <Grid ColumnDefinitions="200,*">
+                            <TextBlock Text="Retour a la ligne" VerticalAlignment="Center" />
+                            <CheckBox Grid.Column="1" Name="WordWrapCheck" IsChecked="False" />
+                        </Grid>
+                    </StackPanel>
+
+                    <Border Height="1" Background="{StaticResource BorderBrush}" />
+
+                    <!-- Sauvegarde automatique -->
+                    <TextBlock Text="Sauvegarde automatique" FontWeight="Bold" FontSize="14" />
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="200,*">
+                            <TextBlock Text="Activer" VerticalAlignment="Center" />
+                            <CheckBox Grid.Column="1" Name="AutoSaveCheck" IsChecked="False" />
+                        </Grid>
+                        <Grid ColumnDefinitions="200,*">
+                            <TextBlock Text="Intervalle (secondes)" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Column="1" Name="AutoSaveIntervalInput"
+                                           Minimum="10" Maximum="600" Value="60"
+                                           Width="120" HorizontalAlignment="Left" />
+                        </Grid>
+                    </StackPanel>
+
+                    <Border Height="1" Background="{StaticResource BorderBrush}" />
+
+                    <!-- Theme -->
+                    <TextBlock Text="Apparence" FontWeight="Bold" FontSize="14" />
+                    <Grid ColumnDefinitions="200,*">
+                        <TextBlock Text="Theme" VerticalAlignment="Center" />
+                        <ComboBox Grid.Column="1" Name="ThemeCombo" Width="150" HorizontalAlignment="Left"
+                                  SelectedIndex="0">
+                            <ComboBoxItem Content="Clair" />
+                            <ComboBoxItem Content="Sombre" />
+                        </ComboBox>
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+    </Border>
+</Window>

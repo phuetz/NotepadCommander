@@ -1,0 +1,46 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="NotepadCommander.UI.Views.Dialogs.AboutDialog"
+        Title="A propos de Notepad Commander"
+        Width="450" Height="350"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+    <Border Padding="32" Background="{StaticResource ToolbarBrush}">
+        <StackPanel Spacing="16" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Text="Notepad Commander"
+                       FontSize="28" FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       Foreground="{StaticResource PrimaryBrush}" />
+
+            <TextBlock Text="Version 1.0.0"
+                       FontSize="14"
+                       HorizontalAlignment="Center"
+                       Foreground="{StaticResource TextSecondaryBrush}" />
+
+            <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,8" />
+
+            <TextBlock Text="Editeur de texte avance avec coloration syntaxique,&#x0a;multi-onglets, recherche regex, et plus encore."
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       FontSize="13"
+                       Foreground="{StaticResource TextSecondaryBrush}" />
+
+            <TextBlock Text="Construit avec Avalonia UI et .NET 8"
+                       FontSize="12"
+                       HorizontalAlignment="Center"
+                       Foreground="{StaticResource TextMutedBrush}" />
+
+            <TextBlock Text="AvaloniaEdit pour l'edition de code"
+                       FontSize="12"
+                       HorizontalAlignment="Center"
+                       Foreground="{StaticResource TextMutedBrush}" />
+
+            <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,8" />
+
+            <Button Content="Fermer" HorizontalAlignment="Center"
+                    Classes="btn-primary" Name="CloseButton"
+                    Width="120" />
+        </StackPanel>
+    </Border>
+</Window>

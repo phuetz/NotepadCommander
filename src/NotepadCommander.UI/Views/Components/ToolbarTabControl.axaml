@@ -1,0 +1,326 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NotepadCommander.UI.ViewModels"
+             xmlns:converters="using:NotepadCommander.UI.Converters"
+             x:Class="NotepadCommander.UI.Views.Components.ToolbarTabControl"
+             x:DataType="vm:ToolbarViewModel"
+             Background="{StaticResource ToolbarBrush}">
+
+    <UserControl.Resources>
+        <converters:PathToFileNameConverter x:Key="PathToFileNameConverter" />
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,Auto">
+        <!-- Ligne d'acces rapide -->
+        <Border Grid.Row="0"
+                Classes="ribbon-top-row"
+                Background="#F7F8FA"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="10,4">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Button x:Name="FileTabButton"
+                            Classes="file-tab"
+                            Classes.active="{Binding IsFileBackstageOpen}"
+                            Command="{Binding ToggleFileBackstageCommand}"
+                            ToolTip.Tip="Backstage Fichier">
+                        <TextBlock Text="Fichier" />
+                    </Button>
+
+                    <Separator Margin="6,0" />
+
+                    <Button Classes="ribbon-quick compact"
+                            Command="{Binding $parent[Window].DataContext.NewDocumentCommand}"
+                            ToolTip.Tip="Nouveau (Ctrl+N)">
+                        <Viewbox Width="14" Height="14">
+                            <Path Data="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"
+                                  Fill="{StaticResource TextSecondaryBrush}" />
+                        </Viewbox>
+                    </Button>
+
+                    <Button Classes="ribbon-quick compact"
+                            Command="{Binding $parent[Window].DataContext.OpenFileCommand}"
+                            CommandParameter="{Binding $parent[Window]}"
+                            ToolTip.Tip="Ouvrir (Ctrl+O)">
+                        <Viewbox Width="14" Height="14">
+                            <Path Data="M19,20H4C2.89,20 2,19.1 2,18V6C2,4.89 2.89,4 4,4H10L12,6H19A2,2 0 0,1 21,8H21L4,8V18L6.14,10H23.21L20.93,18.5C20.7,19.37 19.92,20 19,20Z"
+                                  Fill="{StaticResource TextSecondaryBrush}" />
+                        </Viewbox>
+                    </Button>
+
+                    <Button Classes="ribbon-quick compact"
+                            Command="{Binding $parent[Window].DataContext.SaveFileCommand}"
+                            CommandParameter="{Binding $parent[Window]}"
+                            ToolTip.Tip="Enregistrer (Ctrl+S)">
+                        <Viewbox Width="14" Height="14">
+                            <Path Data="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"
+                                  Fill="{StaticResource TextSecondaryBrush}" />
+                        </Viewbox>
+                    </Button>
+
+                    <Separator Margin="6,0" />
+
+                    <Button Classes="ribbon-quick compact"
+                            ToolTip.Tip="Annuler (Ctrl+Z)">
+                        <Viewbox Width="14" Height="14">
+                            <Path Data="M12,5V1L7,6L12,11V7A6,6 0 0,1 18,13A6,6 0 0,1 12,19A6,6 0 0,1 6,13H4A8,8 0 0,0 12,21A8,8 0 0,0 20,13A8,8 0 0,0 12,5Z"
+                                  Fill="{StaticResource TextSecondaryBrush}" />
+                        </Viewbox>
+                    </Button>
+
+                    <Button Classes="ribbon-quick compact"
+                            ToolTip.Tip="Refaire (Ctrl+Y)">
+                        <Viewbox Width="14" Height="14">
+                            <Path Data="M12,5V1L17,6L12,11V7A6,6 0 0,0 6,13A6,6 0 0,0 12,19A6,6 0 0,0 18,13H20A8,8 0 0,1 12,21A8,8 0 0,1 4,13A8,8 0 0,1 12,5Z"
+                                  Fill="{StaticResource TextSecondaryBrush}" />
+                        </Viewbox>
+                    </Button>
+                </StackPanel>
+
+                <TextBlock Grid.Column="1"
+                           Text="Notepad Commander"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextSecondaryBrush}" />
+
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Spacing="8">
+                    <TextBlock Text="Ctrl+1..5"
+                               VerticalAlignment="Center"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="11" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Ligne des onglets -->
+        <Border Grid.Row="1"
+                Classes="ribbon-tab-row"
+                Background="{StaticResource ToolbarBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="8,0">
+            <StackPanel Orientation="Horizontal" Spacing="2">
+                <Button x:Name="HomeTabButton"
+                        Classes="toolbar-tab"
+                        Classes.active="{Binding IsHomeTabActive}"
+                        Command="{Binding SelectHomeTabCommand}">
+                    <TextBlock Text="Accueil" />
+                </Button>
+
+                <Button x:Name="EditTabButton"
+                        Classes="toolbar-tab"
+                        Classes.active="{Binding IsEditTabActive}"
+                        Command="{Binding SelectEditTabCommand}">
+                    <TextBlock Text="Edition" />
+                </Button>
+
+                <Button x:Name="ViewTabButton"
+                        Classes="toolbar-tab"
+                        Classes.active="{Binding IsViewTabActive}"
+                        Command="{Binding SelectViewTabCommand}">
+                    <TextBlock Text="Affichage" />
+                </Button>
+
+                <Button x:Name="ToolsTabButton"
+                        Classes="toolbar-tab"
+                        Classes.active="{Binding IsToolsTabActive}"
+                        Command="{Binding SelectToolsTabCommand}">
+                    <TextBlock Text="Outils" />
+                </Button>
+
+                <Button x:Name="HelpTabButton"
+                        Classes="toolbar-tab"
+                        Classes.active="{Binding IsHelpTabActive}"
+                        Command="{Binding SelectHelpTabCommand}">
+                    <TextBlock Text="Aide" />
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <!-- Contenu dynamique du ruban -->
+        <Border Grid.Row="2"
+                Background="{StaticResource ToolbarBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="12,8"
+                MinHeight="58">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Disabled">
+                <ContentPresenter Content="{Binding ToolbarContent}" />
+            </ScrollViewer>
+        </Border>
+
+        <!-- Backstage File -->
+        <Border Grid.RowSpan="3"
+                Background="#50000000"
+                IsVisible="{Binding IsFileBackstageOpen}"
+                PointerPressed="OnBackstageOverlayPointerPressed">
+            <Border x:Name="BackstagePanel"
+                    Classes="backstage-panel"
+                    Width="900"
+                    Height="400"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Margin="6,6,0,0">
+                <Grid ColumnDefinitions="200,*">
+                    <Border Grid.Column="0"
+                            Background="{StaticResource PrimaryBrush}">
+                        <Grid RowDefinitions="Auto,*,Auto">
+                            <StackPanel Margin="14,12">
+                                <TextBlock Text="Fichier"
+                                           Foreground="White"
+                                           FontSize="24"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="Backstage"
+                                           Foreground="#EAF3FF"
+                                           FontSize="12" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1"
+                                        Margin="8"
+                                        Spacing="2">
+                                <Button Classes="backstage-nav"
+                                        Classes.active="{Binding IsBackstageHomeSelected}"
+                                        Command="{Binding SelectBackstageHomeCommand}">
+                                    <TextBlock Text="Accueil" />
+                                </Button>
+                                <Button Classes="backstage-nav"
+                                        Classes.active="{Binding IsBackstageOpenSelected}"
+                                        Command="{Binding SelectBackstageOpenCommand}">
+                                    <TextBlock Text="Ouvrir" />
+                                </Button>
+                                <Button Classes="backstage-nav"
+                                        Classes.active="{Binding IsBackstageSaveSelected}"
+                                        Command="{Binding SelectBackstageSaveCommand}">
+                                    <TextBlock Text="Enregistrer" />
+                                </Button>
+                                <Button Classes="backstage-nav"
+                                        Classes.active="{Binding IsBackstageInfoSelected}"
+                                        Command="{Binding SelectBackstageInfoCommand}">
+                                    <TextBlock Text="Informations" />
+                                </Button>
+                            </StackPanel>
+
+                            <Button Grid.Row="2"
+                                    Classes="backstage-close"
+                                    Command="{Binding CloseFileBackstageCommand}"
+                                    Margin="8,6,8,10">
+                                <TextBlock Text="Fermer" />
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="1"
+                            Background="#F8FAFD"
+                            Padding="18,14">
+                        <Grid>
+                            <!-- Accueil -->
+                            <StackPanel IsVisible="{Binding IsBackstageHomeSelected}"
+                                        Spacing="12">
+                                <TextBlock Text="Accueil"
+                                           FontSize="24"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}" />
+                                <TextBlock Text="Acces rapide aux actions principales."
+                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                <WrapPanel Orientation="Horizontal">
+                                    <Button Classes="backstage-action large"
+                                            Command="{Binding $parent[Window].DataContext.NewDocumentCommand}"
+                                            Click="OnBackstageActionClick">
+                                        <TextBlock Text="Nouveau document" />
+                                    </Button>
+                                    <Button Classes="backstage-action large"
+                                            Command="{Binding $parent[Window].DataContext.OpenFileCommand}"
+                                            CommandParameter="{Binding $parent[Window]}"
+                                            Click="OnBackstageActionClick">
+                                        <TextBlock Text="Ouvrir fichier..." />
+                                    </Button>
+                                    <Button Classes="backstage-action large"
+                                            Command="{Binding $parent[Window].DataContext.SaveFileCommand}"
+                                            CommandParameter="{Binding $parent[Window]}"
+                                            Click="OnBackstageActionClick">
+                                        <TextBlock Text="Enregistrer" />
+                                    </Button>
+                                </WrapPanel>
+                            </StackPanel>
+
+                            <!-- Ouvrir -->
+                            <StackPanel IsVisible="{Binding IsBackstageOpenSelected}"
+                                        Spacing="12">
+                                <TextBlock Text="Ouvrir"
+                                           FontSize="24"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}" />
+                                <TextBlock Text="Ouvrir un fichier existant dans un nouvel onglet."
+                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                <Button Classes="backstage-action large"
+                                        Command="{Binding $parent[Window].DataContext.OpenFileCommand}"
+                                        CommandParameter="{Binding $parent[Window]}"
+                                        Click="OnBackstageActionClick">
+                                    <TextBlock Text="Parcourir..." />
+                                </Button>
+                            </StackPanel>
+
+                            <!-- Enregistrer -->
+                            <StackPanel IsVisible="{Binding IsBackstageSaveSelected}"
+                                        Spacing="12">
+                                <TextBlock Text="Enregistrer"
+                                           FontSize="24"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}" />
+                                <TextBlock Text="Sauvegarder le document actif."
+                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                <Button Classes="backstage-action large"
+                                        Command="{Binding $parent[Window].DataContext.SaveFileCommand}"
+                                        CommandParameter="{Binding $parent[Window]}"
+                                        Click="OnBackstageActionClick">
+                                    <TextBlock Text="Enregistrer" />
+                                </Button>
+                                <Button Classes="backstage-action large"
+                                        Command="{Binding $parent[Window].DataContext.SaveFileAsCommand}"
+                                        CommandParameter="{Binding $parent[Window]}"
+                                        Click="OnBackstageActionClick">
+                                    <TextBlock Text="Enregistrer sous..." />
+                                </Button>
+                                <Button Classes="backstage-action large"
+                                        Command="{Binding $parent[Window].DataContext.SaveAllFilesCommand}"
+                                        CommandParameter="{Binding $parent[Window]}"
+                                        Click="OnBackstageActionClick">
+                                    <TextBlock Text="Tout enregistrer" />
+                                </Button>
+                            </StackPanel>
+
+                            <!-- Informations -->
+                            <StackPanel IsVisible="{Binding IsBackstageInfoSelected}"
+                                        Spacing="12">
+                                <TextBlock Text="Informations"
+                                           FontSize="24"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}" />
+                                <TextBlock Text="Notepad Commander v1.0"
+                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                <Border Classes="backstage-card">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Editeur de texte avance"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="Inspire par VS Code, Notepad++, Sublime Text"
+                                                   Foreground="{StaticResource TextMutedBrush}"
+                                                   FontSize="12" />
+                                        <TextBlock Text="Construit avec AvaloniaUI et AvaloniaEdit"
+                                                   Foreground="{StaticResource TextMutedBrush}"
+                                                   FontSize="12" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </Border>
+    </Grid>
+</UserControl>

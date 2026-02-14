@@ -1,0 +1,28 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Style Selector=":is(Window).dark-theme">
+        <Style.Resources>
+            <!-- Palette sombre -->
+            <SolidColorBrush x:Key="PrimaryBrush" Color="#64B5F6" />
+            <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#90CAF9" />
+            <SolidColorBrush x:Key="PrimaryDarkBrush" Color="#42A5F5" />
+
+            <SolidColorBrush x:Key="BackgroundBrush" Color="#1E1E1E" />
+            <SolidColorBrush x:Key="SurfaceBrush" Color="#252526" />
+            <SolidColorBrush x:Key="ToolbarBrush" Color="#2D2D30" />
+            <SolidColorBrush x:Key="BorderBrush" Color="#3E3E42" />
+
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="#D4D4D4" />
+            <SolidColorBrush x:Key="TextSecondaryBrush" Color="#ABABAB" />
+            <SolidColorBrush x:Key="TextMutedBrush" Color="#808080" />
+
+            <SolidColorBrush x:Key="SuccessBrush" Color="#6A9955" />
+            <SolidColorBrush x:Key="WarningBrush" Color="#CCA700" />
+            <SolidColorBrush x:Key="ErrorBrush" Color="#F48771" />
+
+            <SolidColorBrush x:Key="SelectedTabBrush" Color="#37373D" />
+            <SolidColorBrush x:Key="HoverBrush" Color="#2A2D2E" />
+        </Style.Resources>
+    </Style>
+</Styles>

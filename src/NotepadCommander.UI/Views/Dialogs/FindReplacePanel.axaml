@@ -1,0 +1,118 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NotepadCommander.UI.ViewModels"
+             x:Class="NotepadCommander.UI.Views.Dialogs.FindReplacePanel"
+             x:DataType="vm:FindReplaceViewModel"
+             IsVisible="{Binding IsVisible}">
+
+    <Border Background="White"
+            BorderBrush="{StaticResource BorderBrush}"
+            BorderThickness="1"
+            CornerRadius="6"
+            Padding="12,8"
+            Margin="0,0,20,0"
+            BoxShadow="0 2 8 0 #20000000"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            MaxWidth="480">
+        <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto">
+            <!-- Bouton expand/collapse -->
+            <Button Grid.Row="0" Grid.Column="0"
+                    Classes="btn-icon"
+                    Width="24" Height="24"
+                    Command="{Binding ToggleReplaceCommand}"
+                    ToolTip.Tip="Afficher/Masquer Remplacer"
+                    Margin="0,0,8,0">
+                <Viewbox Width="12" Height="12">
+                    <Path Data="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                          Fill="{StaticResource TextSecondaryBrush}" />
+                </Viewbox>
+            </Button>
+
+            <!-- Ligne Rechercher -->
+            <TextBox Grid.Row="0" Grid.Column="1"
+                     Text="{Binding SearchText, Mode=TwoWay}"
+                     Watermark="Rechercher..."
+                     FontSize="13"
+                     Margin="0,0,4,4" />
+            <StackPanel Grid.Row="0" Grid.Column="2"
+                        Orientation="Horizontal" Spacing="2">
+                <ToggleButton IsChecked="{Binding CaseSensitive}"
+                              ToolTip.Tip="Respecter la casse"
+                              Padding="6" FontSize="11">
+                    <TextBlock Text="Aa" FontWeight="SemiBold" />
+                </ToggleButton>
+                <ToggleButton IsChecked="{Binding WholeWord}"
+                              ToolTip.Tip="Mot entier"
+                              Padding="6" FontSize="11">
+                    <TextBlock Text="W" FontWeight="SemiBold" />
+                </ToggleButton>
+                <ToggleButton IsChecked="{Binding UseRegex}"
+                              ToolTip.Tip="Expression reguliere"
+                              Padding="6" FontSize="11">
+                    <TextBlock Text=".*" FontWeight="SemiBold" />
+                </ToggleButton>
+                <Button Classes="btn-icon" Width="28" Height="28"
+                        Command="{Binding FindPreviousCommand}"
+                        ToolTip.Tip="Precedent">
+                    <Viewbox Width="12" Height="12">
+                        <Path Data="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
+                              Fill="{StaticResource TextSecondaryBrush}" />
+                    </Viewbox>
+                </Button>
+                <Button Classes="btn-icon" Width="28" Height="28"
+                        Command="{Binding FindNextCommand}"
+                        ToolTip.Tip="Suivant">
+                    <Viewbox Width="12" Height="12">
+                        <Path Data="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
+                              Fill="{StaticResource TextSecondaryBrush}" />
+                    </Viewbox>
+                </Button>
+                <Button Classes="btn-icon" Width="28" Height="28"
+                        Command="{Binding CloseCommand}"
+                        ToolTip.Tip="Fermer (Echap)">
+                    <Viewbox Width="10" Height="10">
+                        <Path Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+                              Fill="{StaticResource TextSecondaryBrush}" />
+                    </Viewbox>
+                </Button>
+            </StackPanel>
+
+            <!-- Ligne Remplacer (conditionnelle) -->
+            <TextBox Grid.Row="1" Grid.Column="1"
+                     Text="{Binding ReplaceText, Mode=TwoWay}"
+                     Watermark="Remplacer par..."
+                     FontSize="13"
+                     IsVisible="{Binding ShowReplace}"
+                     Margin="0,0,4,4" />
+            <StackPanel Grid.Row="1" Grid.Column="2"
+                        Orientation="Horizontal" Spacing="2"
+                        IsVisible="{Binding ShowReplace}">
+                <Button Classes="btn-icon" Width="28" Height="28"
+                        Command="{Binding ReplaceNextCommand}"
+                        ToolTip.Tip="Remplacer">
+                    <Viewbox Width="12" Height="12">
+                        <Path Data="M11,6C12.38,6 13.63,6.56 14.54,7.46L12,10H18V4L15.95,6.05C14.68,4.78 12.93,4 11,4C7.47,4 4.57,6.61 4.08,10H6.1C6.56,7.72 8.58,6 11,6M16.64,15.14C17.3,14.24 17.76,13.17 17.92,12H15.9C15.44,14.28 13.42,16 11,16C9.62,16 8.37,15.44 7.46,14.54L10,12H4V18L6.05,15.95C7.32,17.22 9.07,18 11,18C12.55,18 13.98,17.5 15.14,16.64L20,21.49L21.49,20L16.64,15.14Z"
+                              Fill="{StaticResource TextSecondaryBrush}" />
+                    </Viewbox>
+                </Button>
+                <Button Classes="btn-icon" Width="28" Height="28"
+                        Command="{Binding ReplaceAllOccurrencesCommand}"
+                        ToolTip.Tip="Tout remplacer">
+                    <Viewbox Width="12" Height="12">
+                        <Path Data="M11,6C12.38,6 13.63,6.56 14.54,7.46L12,10H18V4L15.95,6.05C14.68,4.78 12.93,4 11,4C7.47,4 4.57,6.61 4.08,10H6.1C6.56,7.72 8.58,6 11,6M16.64,15.14C17.3,14.24 17.76,13.17 17.92,12H15.9C15.44,14.28 13.42,16 11,16C9.62,16 8.37,15.44 7.46,14.54L10,12H4V18L6.05,15.95C7.32,17.22 9.07,18 11,18C12.55,18 13.98,17.5 15.14,16.64L20,21.49L21.49,20L16.64,15.14Z"
+                              Fill="{StaticResource PrimaryBrush}" />
+                    </Viewbox>
+                </Button>
+            </StackPanel>
+
+            <!-- Statut -->
+            <TextBlock Grid.Row="2" Grid.Column="1"
+                       Grid.ColumnSpan="2"
+                       Text="{Binding StatusText}"
+                       FontSize="11"
+                       Foreground="{StaticResource TextMutedBrush}"
+                       Margin="0,2,0,0" />
+        </Grid>
+    </Border>
+</UserControl>

@@ -1,0 +1,32 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="NotepadCommander.UI.Views.Dialogs.GoToLineDialog"
+        Title="Aller a la ligne"
+        Width="320" Height="160"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False">
+
+    <Grid Margin="20" RowDefinitions="Auto,Auto,Auto">
+        <TextBlock Text="Numero de ligne :"
+                   Margin="0,0,0,8" />
+
+        <TextBox Grid.Row="1"
+                 x:Name="LineNumberBox"
+                 Watermark="Entrez un numero de ligne..."
+                 Margin="0,0,0,16" />
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="8">
+            <Button Content="Aller"
+                    Classes="btn-primary"
+                    Click="OnGoClicked"
+                    IsDefault="True" />
+            <Button Content="Annuler"
+                    Click="OnCancelClicked"
+                    IsCancel="True" />
+        </StackPanel>
+    </Grid>
+</Window>

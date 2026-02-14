@@ -1,0 +1,161 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:NotepadCommander.UI.ViewModels"
+        xmlns:components="using:NotepadCommander.UI.Views.Components"
+        xmlns:dialogs="using:NotepadCommander.UI.Views.Dialogs"
+        xmlns:converters="using:NotepadCommander.UI.Converters"
+        x:Class="NotepadCommander.UI.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding WindowTitle}"
+        Width="1280" Height="800"
+        MinWidth="800" MinHeight="500">
+
+    <Window.Resources>
+        <converters:PathToFileNameConverter x:Key="PathToFileNameConverter" />
+    </Window.Resources>
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
+        <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenFileCommand}" CommandParameter="{Binding $self}" />
+        <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveFileCommand}" CommandParameter="{Binding $self}" />
+        <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveFileAsCommand}" CommandParameter="{Binding $self}" />
+        <KeyBinding Gesture="Ctrl+W" Command="{Binding CloseTabCommand}" />
+        <KeyBinding Gesture="Ctrl+Tab" Command="{Binding NextTabCommand}" />
+        <KeyBinding Gesture="Ctrl+Shift+Tab" Command="{Binding PreviousTabCommand}" />
+        <KeyBinding Gesture="Ctrl+F" Command="{Binding ShowFindCommand}" />
+        <KeyBinding Gesture="Ctrl+H" Command="{Binding ShowReplaceCommand}" />
+        <KeyBinding Gesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />
+        <KeyBinding Gesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />
+        <KeyBinding Gesture="Ctrl+D0" Command="{Binding ZoomResetCommand}" />
+    </Window.KeyBindings>
+
+    <DockPanel>
+        <!-- Ruban -->
+        <components:ToolbarTabControl DockPanel.Dock="Top"
+                                      DataContext="{Binding ToolbarViewModel}" />
+
+        <!-- Barre d'onglets documents -->
+        <Border DockPanel.Dock="Top"
+                Background="#F0F0F0"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="4,0"
+                Height="36">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Tabs}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="2" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DocumentTabViewModel">
+                            <Button Classes="btn-toolbar"
+                                    Padding="10,6"
+                                    ToolTip.Tip="{Binding FilePath}">
+                                <Button.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Fermer"
+                                                  Command="{Binding $parent[Window].DataContext.CloseTabCommand}"
+                                                  CommandParameter="{Binding}" />
+                                        <MenuItem Header="Nouveau"
+                                                  Command="{Binding $parent[Window].DataContext.NewDocumentCommand}" />
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="{Binding Title}"
+                                               VerticalAlignment="Center"
+                                               FontSize="12"
+                                               Margin="0,0,8,0" />
+                                    <Button Grid.Column="1"
+                                            Classes="btn-icon"
+                                            Width="20" Height="20"
+                                            Padding="2"
+                                            Command="{Binding $parent[Window].DataContext.CloseTabCommand}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip.Tip="Fermer">
+                                        <Viewbox Width="10" Height="10">
+                                            <Path Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+                                                  Fill="{StaticResource TextSecondaryBrush}" />
+                                        </Viewbox>
+                                    </Button>
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Barre d'etat avec zoom -->
+        <Border DockPanel.Dock="Bottom"
+                Classes="status-bar-shell"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="10,4">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <!-- Position curseur -->
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Classes="status-label strong"
+                               Text="{Binding ActiveTab.CursorPositionDisplay, FallbackValue='Ln 1, Col 1'}" />
+                </StackPanel>
+
+                <!-- Zone centrale : Zoom slider -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="8">
+                    <Button Classes="btn-icon" Width="24" Height="24"
+                            Command="{Binding ZoomOutCommand}"
+                            ToolTip.Tip="Zoom arriere">
+                        <TextBlock Text="-" FontSize="14" FontWeight="Bold"
+                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                    </Button>
+                    <Slider Value="{Binding ZoomLevel}"
+                            Minimum="50" Maximum="300"
+                            Width="120"
+                            VerticalAlignment="Center" />
+                    <Button Classes="btn-icon" Width="24" Height="24"
+                            Command="{Binding ZoomInCommand}"
+                            ToolTip.Tip="Zoom avant">
+                        <TextBlock Text="+" FontSize="14" FontWeight="Bold"
+                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                    </Button>
+                    <TextBlock Classes="status-label"
+                               Text="{Binding ZoomLevel, StringFormat='{}{0:0}%'}"
+                               Width="40" />
+                </StackPanel>
+
+                <!-- Informations document -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                    <Border Classes="status-value-pill">
+                        <TextBlock Classes="status-label"
+                                   Text="{Binding ActiveTab.EncodingDisplay, FallbackValue='UTF-8'}" />
+                    </Border>
+                    <Border Classes="status-separator" />
+                    <Border Classes="status-value-pill">
+                        <TextBlock Classes="status-label"
+                                   Text="{Binding ActiveTab.LineEndingDisplay, FallbackValue='CRLF'}" />
+                    </Border>
+                    <Border Classes="status-separator" />
+                    <Border Classes="status-value-pill">
+                        <TextBlock Classes="status-label accent"
+                                   Text="{Binding ActiveTab.LanguageDisplay, FallbackValue='Texte brut'}" />
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Zone editeur avec panneau recherche -->
+        <Grid>
+            <components:EditorControl DataContext="{Binding ActiveTab}" />
+
+            <!-- Panneau Rechercher/Remplacer -->
+            <dialogs:FindReplacePanel DataContext="{Binding FindReplaceViewModel}"
+                                      VerticalAlignment="Top"
+                                      HorizontalAlignment="Right"
+                                      Margin="0,8,8,0" />
+        </Grid>
+    </DockPanel>
+</Window>

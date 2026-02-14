@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:aedit="https://github.com/avaloniaui/avaloniaedit"
+             xmlns:vm="using:NotepadCommander.UI.ViewModels"
+             x:Class="NotepadCommander.UI.Views.Components.EditorControl"
+             x:DataType="vm:DocumentTabViewModel">
+
+    <Grid>
+        <aedit:TextEditor x:Name="TextEditor"
+                          FontFamily="Cascadia Code, Consolas, Menlo, monospace"
+                          FontSize="{Binding FontSize}"
+                          ShowLineNumbers="True"
+                          WordWrap="False"
+                          Background="White"
+                          Foreground="#333333"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto" />
+
+        <TextBlock Text="Aucun document ouvert"
+                   IsVisible="{Binding !$self.DataContext}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Foreground="#999999"
+                   FontSize="16" />
+    </Grid>
+</UserControl>

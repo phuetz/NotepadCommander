@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NotepadCommander.UI.ViewModels"
+             x:Class="NotepadCommander.UI.Views.Components.HelpToolbar"
+             x:DataType="vm:MainWindowViewModel">
+
+    <StackPanel Orientation="Horizontal" Spacing="16" Margin="8,4">
+        <!-- Groupe Aide -->
+        <Border Classes="ribbon-group">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Button Classes="toolbar-button" Name="AboutButton" ToolTip.Tip="A propos de Notepad Commander">
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <TextBlock Text="ℹ" FontSize="18" HorizontalAlignment="Center" />
+                            <TextBlock Text="A propos" FontSize="10" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="toolbar-button" Name="ShortcutsButton" ToolTip.Tip="Raccourcis clavier">
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <TextBlock Text="⌨" FontSize="18" HorizontalAlignment="Center" />
+                            <TextBlock Text="Raccourcis" FontSize="10" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <TextBlock Classes="ribbon-group-title" Text="Aide" />
+            </StackPanel>
+        </Border>
+
+        <!-- Groupe Preferences -->
+        <Border Classes="ribbon-group">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Button Classes="toolbar-button" Name="SettingsButton" ToolTip.Tip="Preferences">
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <TextBlock Text="⚙" FontSize="18" HorizontalAlignment="Center" />
+                            <TextBlock Text="Preferences" FontSize="10" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <TextBlock Classes="ribbon-group-title" Text="Preferences" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

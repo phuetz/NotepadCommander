@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NotepadCommander.UI.ViewModels"
+             x:Class="NotepadCommander.UI.Views.Components.StatusBar"
+             x:DataType="vm:DocumentTabViewModel">
+
+    <Border Classes="status-bar-shell"
+            BorderBrush="{StaticResource BorderBrush}"
+            BorderThickness="0,1,0,0"
+            Padding="10,4">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+            <!-- Position curseur -->
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Classes="status-label strong"
+                           Text="{Binding CursorPositionDisplay, FallbackValue='Ln 1, Col 1'}" />
+            </StackPanel>
+
+            <!-- Zone centrale (vide pour l'instant) -->
+            <StackPanel Grid.Column="1" />
+
+            <!-- Informations document -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                <Border Classes="status-value-pill">
+                    <TextBlock Classes="status-label"
+                               Text="{Binding EncodingDisplay, FallbackValue='UTF-8'}" />
+                </Border>
+                <Border Classes="status-separator" />
+                <Border Classes="status-value-pill">
+                    <TextBlock Classes="status-label"
+                               Text="{Binding LineEndingDisplay, FallbackValue='CRLF'}" />
+                </Border>
+                <Border Classes="status-separator" />
+                <Border Classes="status-value-pill">
+                    <TextBlock Classes="status-label accent"
+                               Text="{Binding LanguageDisplay, FallbackValue='Texte brut'}" />
+                </Border>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>
