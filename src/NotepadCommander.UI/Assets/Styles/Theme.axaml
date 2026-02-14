@@ -4,14 +4,14 @@
     <!-- Couleurs de l'application -->
     <Style>
         <Style.Resources>
-            <!-- Couleurs principales (bleu editeur) -->
-            <Color x:Key="PrimaryColor">#2196F3</Color>
-            <Color x:Key="PrimaryHoverColor">#1E88E5</Color>
-            <Color x:Key="PrimaryLightColor">#E3F2FD</Color>
+            <!-- Couleurs principales (vert, comme PdfCommander) -->
+            <Color x:Key="PrimaryColor">#4CAF50</Color>
+            <Color x:Key="PrimaryHoverColor">#43A047</Color>
+            <Color x:Key="PrimaryLightColor">#E8F5E9</Color>
             <Color x:Key="DangerColor">#F44336</Color>
             <Color x:Key="DangerHoverColor">#FFEBEE</Color>
             <Color x:Key="SelectionColor">#2196F3</Color>
-            <Color x:Key="SelectionBackgroundColor">#E3F2FD</Color>
+            <Color x:Key="SelectionBackgroundColor">#E8F5E9</Color>
             <Color x:Key="TextColor">#333333</Color>
             <Color x:Key="TextSecondaryColor">#666666</Color>
             <Color x:Key="TextMutedColor">#999999</Color>
@@ -116,8 +116,8 @@
         <Setter Property="Background" Value="{StaticResource PrimaryHoverBrush}" />
     </Style>
     <Style Selector="Button.file-tab.active">
-        <Setter Property="Background" Value="#1565C0" />
-        <Setter Property="BorderBrush" Value="#1565C0" />
+        <Setter Property="Background" Value="#388E3C" />
+        <Setter Property="BorderBrush" Value="#388E3C" />
     </Style>
 
     <Style Selector="Button.ribbon-quick">
