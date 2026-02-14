@@ -1,0 +1,62 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="NotepadCommander.UI.Views.Components.SearchPanel"
+             x:CompileBindings="False">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Search input -->
+        <Grid ColumnDefinitions="*,Auto" Margin="4">
+            <TextBox Name="SearchPatternBox"
+                     Watermark="Rechercher dans les fichiers..."
+                     FontSize="12"
+                     KeyDown="OnSearchKeyDown" />
+            <Button Grid.Column="1"
+                    Name="SearchButton"
+                    Content="Go"
+                    Width="36" Height="28"
+                    Margin="4,0,0,0"
+                    FontSize="11"
+                    Click="OnSearchClick" />
+        </Grid>
+
+        <!-- Options -->
+        <WrapPanel Grid.Row="1" Margin="4,0,4,4">
+            <CheckBox Name="CaseSensitiveCheck"
+                      Content="Aa"
+                      ToolTip.Tip="Respecter la casse"
+                      FontSize="10"
+                      Margin="0,0,4,0" />
+            <CheckBox Name="WholeWordCheck"
+                      Content="[ab]"
+                      ToolTip.Tip="Mot entier"
+                      FontSize="10"
+                      Margin="0,0,4,0" />
+            <CheckBox Name="RegexCheck"
+                      Content=".*"
+                      ToolTip.Tip="Expression reguliere"
+                      FontSize="10" />
+        </WrapPanel>
+
+        <!-- Results tree -->
+        <TreeView Grid.Row="2"
+                  Name="ResultsTree"
+                  FontSize="11"
+                  Padding="2"
+                  DoubleTapped="OnResultDoubleTapped">
+            <TreeView.Styles>
+                <Style Selector="TreeViewItem">
+                    <Setter Property="IsExpanded" Value="True" />
+                </Style>
+            </TreeView.Styles>
+        </TreeView>
+
+        <!-- Status -->
+        <TextBlock Grid.Row="3"
+                   Name="StatusText"
+                   Text=""
+                   FontSize="10"
+                   Foreground="{StaticResource TextMutedBrush}"
+                   Padding="6,4"
+                   TextTrimming="CharacterEllipsis" />
+    </Grid>
+</UserControl>

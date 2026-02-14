@@ -102,6 +102,9 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly List<string> _clipboardHistory = new();
     public IReadOnlyList<string> ClipboardHistory => _clipboardHistory;
 
+    // Search in files event
+    public event Action? ShowSearchInFilesRequested;
+
     // Editor action events - EditorControl subscribes to these
     public event Action? UndoRequested;
     public event Action? RedoRequested;
@@ -626,6 +629,14 @@ public partial class MainWindowViewModel : ViewModelBase
         IsSidePanelVisible = !IsSidePanelVisible;
     }
 
+    // Search in files
+    [RelayCommand]
+    private void ShowSearchInFiles()
+    {
+        IsSidePanelVisible = true;
+        ShowSearchInFilesRequested?.Invoke();
+    }
+
     // Command palette
     [RelayCommand]
     private void ShowCommandPalette()
@@ -684,6 +695,7 @@ public partial class MainWindowViewModel : ViewModelBase
             new("Surligner ligne courante", "", () => ToggleHighlightCurrentLine()),
             new("Afficher espaces", "", () => ToggleShowWhitespace()),
             new("Panneau lateral", "", () => ToggleSidePanel()),
+            new("Rechercher dans les fichiers", "Ctrl+Shift+F", () => ShowSearchInFiles()),
             new("Onglet suivant", "Ctrl+Tab", () => NextTab()),
             new("Onglet precedent", "Ctrl+Shift+Tab", () => PreviousTab()),
         };

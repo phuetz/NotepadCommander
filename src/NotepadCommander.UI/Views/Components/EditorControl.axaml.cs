@@ -2,11 +2,17 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AvaloniaEdit;
+using AvaloniaEdit.Folding;
 using AvaloniaEdit.TextMate;
+using Microsoft.Extensions.DependencyInjection;
 using NotepadCommander.Core.Models;
 using NotepadCommander.Core.Services;
+using NotepadCommander.Core.Services.Git;
+using NotepadCommander.UI.Controls;
+using NotepadCommander.UI.Services;
 using NotepadCommander.UI.ViewModels;
 using TextMateSharp.Grammars;
 
@@ -21,6 +27,15 @@ public partial class EditorControl : UserControl
     private DocumentTabViewModel? _currentViewModel;
     private MainWindowViewModel? _mainViewModel;
     private bool _editorInitialized;
+
+    // Dev features
+    private GitGutterMargin? _gitGutterMargin;
+    private BracketHighlightRenderer? _bracketRenderer;
+    private IndentationGuideRenderer? _indentGuideRenderer;
+    private FoldingManager? _foldingManager;
+    private IGitService? _gitService;
+    private DispatcherTimer? _gitDebounceTimer;
+    private DispatcherTimer? _foldingDebounceTimer;
 
     public EditorControl()
     {
@@ -48,6 +63,48 @@ public partial class EditorControl : UserControl
         // Ensure a valid font size even if the binding fails
         if (_textEditor.FontSize <= 0)
             _textEditor.FontSize = 14;
+
+        // Initialize dev features
+        InitializeDevFeatures();
+    }
+
+    private void InitializeDevFeatures()
+    {
+        if (_textEditor == null) return;
+
+        // Git service
+        try { _gitService = App.Services.GetService<IGitService>(); } catch { /* DI not ready */ }
+
+        // Git gutter margin - insert at position 0 (before line numbers)
+        _gitGutterMargin = new GitGutterMargin();
+        _textEditor.TextArea.LeftMargins.Insert(0, _gitGutterMargin);
+
+        // Bracket highlight renderer
+        _bracketRenderer = new BracketHighlightRenderer();
+        _textEditor.TextArea.TextView.BackgroundRenderers.Add(_bracketRenderer);
+
+        // Indentation guide renderer
+        _indentGuideRenderer = new IndentationGuideRenderer();
+        _textEditor.TextArea.TextView.BackgroundRenderers.Add(_indentGuideRenderer);
+
+        // Code folding
+        _foldingManager = FoldingManager.Install(_textEditor.TextArea);
+
+        // Git debounce timer (500ms)
+        _gitDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+        _gitDebounceTimer.Tick += (_, _) =>
+        {
+            _gitDebounceTimer.Stop();
+            RefreshGitGutter();
+        };
+
+        // Folding debounce timer (1s)
+        _foldingDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000) };
+        _foldingDebounceTimer.Tick += (_, _) =>
+        {
+            _foldingDebounceTimer.Stop();
+            RefreshFoldings();
+        };
     }
 
     protected override void OnLoaded(RoutedEventArgs e)
@@ -301,6 +358,10 @@ public partial class EditorControl : UserControl
         ApplySyntaxHighlighting(viewModel.Language);
         viewModel.PropertyChanged -= OnViewModelPropertyChanged; // prevent double subscribe
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
+
+        // Refresh dev features for the new content
+        RefreshGitGutter();
+        RefreshFoldings();
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
@@ -322,6 +383,7 @@ public partial class EditorControl : UserControl
         if (e.PropertyName == nameof(DocumentTabViewModel.Language) && _currentViewModel != null)
         {
             ApplySyntaxHighlighting(_currentViewModel.Language);
+            RefreshFoldings();
         }
         else if (e.PropertyName == nameof(DocumentTabViewModel.Content) && _currentViewModel != null && _textEditor != null)
         {
@@ -351,6 +413,14 @@ public partial class EditorControl : UserControl
         _isUpdatingFromViewModel = true;
         _currentViewModel.Content = _textEditor.Text ?? string.Empty;
         _isUpdatingFromViewModel = false;
+
+        // Debounce git gutter refresh
+        _gitDebounceTimer?.Stop();
+        _gitDebounceTimer?.Start();
+
+        // Debounce folding refresh
+        _foldingDebounceTimer?.Stop();
+        _foldingDebounceTimer?.Start();
     }
 
     private void OnCaretPositionChanged(object? sender, EventArgs e)
@@ -363,6 +433,60 @@ public partial class EditorControl : UserControl
 
         var selection = _textEditor.TextArea.Selection;
         _currentViewModel.SelectionLength = selection.IsEmpty ? 0 : selection.Length;
+
+        // Update bracket matching
+        UpdateBracketHighlight();
+    }
+
+    private void UpdateBracketHighlight()
+    {
+        if (_bracketRenderer == null || _textEditor == null) return;
+
+        var (open, close) = BracketHighlightRenderer.FindMatchingBracket(
+            _textEditor.Document, _textEditor.CaretOffset);
+
+        if (open >= 0 && close >= 0)
+            _bracketRenderer.SetHighlight(open, close);
+        else
+            _bracketRenderer.ClearHighlight();
+
+        _textEditor.TextArea.TextView.InvalidateLayer(AvaloniaEdit.Rendering.KnownLayer.Selection);
+    }
+
+    private void RefreshGitGutter()
+    {
+        if (_gitGutterMargin == null || _gitService == null || _currentViewModel?.FilePath == null) return;
+
+        try
+        {
+            if (_gitService.IsInGitRepository(_currentViewModel.FilePath))
+            {
+                var changes = _gitService.GetModifiedLines(_currentViewModel.FilePath);
+                _gitGutterMargin.UpdateChanges(changes);
+            }
+            else
+            {
+                _gitGutterMargin.UpdateChanges(Array.Empty<GitLineChange>());
+            }
+        }
+        catch
+        {
+            _gitGutterMargin.UpdateChanges(Array.Empty<GitLineChange>());
+        }
+    }
+
+    private void RefreshFoldings()
+    {
+        if (_foldingManager == null || _textEditor == null || _currentViewModel == null) return;
+
+        try
+        {
+            CodeFoldingService.UpdateFoldings(_foldingManager, _textEditor.Document, _currentViewModel.Language);
+        }
+        catch
+        {
+            // Silently ignore folding errors
+        }
     }
 
     private void ApplySyntaxHighlighting(SupportedLanguage language)

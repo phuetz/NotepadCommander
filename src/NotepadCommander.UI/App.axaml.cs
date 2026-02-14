@@ -17,6 +17,8 @@ using NotepadCommander.Core.Services.Snippets;
 using NotepadCommander.Core.Services.Markdown;
 using NotepadCommander.Core.Services.Calculator;
 using NotepadCommander.Core.Services.AutoComplete;
+using NotepadCommander.Core.Services.Git;
+using NotepadCommander.Core.Services.Search;
 using NotepadCommander.UI.ViewModels;
 using NotepadCommander.UI.Views;
 
@@ -76,6 +78,8 @@ public partial class App : Application
         services.AddSingleton<IMarkdownService, MarkdownService>();
         services.AddSingleton<ICalculatorService, CalculatorService>();
         services.AddSingleton<IAutoCompleteService, AutoCompleteService>();
+        services.AddSingleton<IGitService, GitService>();
+        services.AddSingleton<IMultiFileSearchService, MultiFileSearchService>();
 
         // ViewModels (MainWindowViewModel takes all services via DI constructor)
         services.AddTransient<MainWindowViewModel>();

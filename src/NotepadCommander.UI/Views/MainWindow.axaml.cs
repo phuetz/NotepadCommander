@@ -3,7 +3,9 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using NotepadCommander.UI.ViewModels;
+using NotepadCommander.UI.Views.Components;
 using NotepadCommander.UI.Views.Dialogs;
 
 namespace NotepadCommander.UI.Views;
@@ -33,6 +35,9 @@ public partial class MainWindow : Window
 
             // Subscribe to file watcher events
             vm.FileChangedExternally += OnFileChangedExternally;
+
+            // Subscribe to search in files
+            vm.ShowSearchInFilesRequested += OnShowSearchInFiles;
 
             // Restore session
             Dispatcher.UIThread.Post(async () =>
@@ -179,6 +184,14 @@ public partial class MainWindow : Window
 
         if (DataContext is not MainWindowViewModel vm) return;
 
+        // Search in files: Ctrl+Shift+F
+        if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && e.Key == Key.F)
+        {
+            vm.ShowSearchInFilesCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
         // Command palette: Ctrl+Shift+P
         if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && e.Key == Key.P)
         {
@@ -228,6 +241,13 @@ public partial class MainWindow : Window
             await ShowGoToLineDialog(vm);
             e.Handled = true;
         }
+    }
+
+    private void OnShowSearchInFiles()
+    {
+        // Find the SidePanel in the visual tree and switch to search tab
+        var sidePanel = this.GetVisualDescendants().OfType<SidePanel>().FirstOrDefault();
+        sidePanel?.ShowSearchTab();
     }
 
     private async Task ShowGoToLineDialog(MainWindowViewModel vm)

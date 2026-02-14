@@ -15,6 +15,8 @@ public partial class SidePanel : UserControl
 {
     private readonly IFileExplorerService _fileExplorerService;
     private FileTreeNode? _rootNode;
+    private string? _currentFolderPath;
+    private bool _isSearchTab;
 
     public SidePanel()
     {
@@ -33,7 +35,61 @@ public partial class SidePanel : UserControl
         AddHandler(DragDrop.DropEvent, OnFolderDrop);
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
         DragDrop.SetAllowDrop(this, true);
+
+        // Default to files tab
+        ShowFilesTab();
     }
+
+    public void ShowSearchTab()
+    {
+        _isSearchTab = true;
+        var filesPanel = this.FindControl<Grid>("FilesPanel");
+        var filesHeader = this.FindControl<Border>("FilesHeader");
+        var folderPath = this.FindControl<TextBlock>("FolderPathText");
+        var searchPanel = this.FindControl<SearchPanel>("SearchPanelView");
+
+        if (filesPanel != null) filesPanel.IsVisible = false;
+        if (filesHeader != null) filesHeader.IsVisible = false;
+        if (folderPath != null) folderPath.IsVisible = false;
+        if (searchPanel != null)
+        {
+            searchPanel.IsVisible = true;
+            searchPanel.SetSearchDirectory(_currentFolderPath);
+            searchPanel.FocusSearchBox();
+        }
+
+        UpdateTabHighlights();
+    }
+
+    private void ShowFilesTab()
+    {
+        _isSearchTab = false;
+        var filesPanel = this.FindControl<Grid>("FilesPanel");
+        var filesHeader = this.FindControl<Border>("FilesHeader");
+        var folderPath = this.FindControl<TextBlock>("FolderPathText");
+        var searchPanel = this.FindControl<SearchPanel>("SearchPanelView");
+
+        if (filesPanel != null) filesPanel.IsVisible = true;
+        if (filesHeader != null) filesHeader.IsVisible = true;
+        if (folderPath != null && _currentFolderPath != null) folderPath.IsVisible = true;
+        if (searchPanel != null) searchPanel.IsVisible = false;
+
+        UpdateTabHighlights();
+    }
+
+    private void UpdateTabHighlights()
+    {
+        var filesBtn = this.FindControl<Button>("FilesTabButton");
+        var searchBtn = this.FindControl<Button>("SearchTabButton");
+
+        if (filesBtn != null)
+            filesBtn.FontWeight = _isSearchTab ? Avalonia.Media.FontWeight.Normal : Avalonia.Media.FontWeight.Bold;
+        if (searchBtn != null)
+            searchBtn.FontWeight = _isSearchTab ? Avalonia.Media.FontWeight.Bold : Avalonia.Media.FontWeight.Normal;
+    }
+
+    private void OnFilesTabClick(object? sender, RoutedEventArgs e) => ShowFilesTab();
+    private void OnSearchTabClick(object? sender, RoutedEventArgs e) => ShowSearchTab();
 
     private void OnDragOver(object? sender, DragEventArgs e)
     {
@@ -75,6 +131,7 @@ public partial class SidePanel : UserControl
 
     private void LoadFolder(string path)
     {
+        _currentFolderPath = path;
         _rootNode = _fileExplorerService.LoadDirectory(path);
         if (_rootNode == null) return;
 
@@ -96,6 +153,10 @@ public partial class SidePanel : UserControl
             pathText.Text = path;
             pathText.IsVisible = true;
         }
+
+        // Update search panel directory
+        var searchPanel = this.FindControl<SearchPanel>("SearchPanelView");
+        searchPanel?.SetSearchDirectory(path);
     }
 
     private async void OnTreeDoubleTapped(object? sender, TappedEventArgs e)
