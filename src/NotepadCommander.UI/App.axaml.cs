@@ -77,7 +77,7 @@ public partial class App : Application
         services.AddSingleton<ICalculatorService, CalculatorService>();
         services.AddSingleton<IAutoCompleteService, AutoCompleteService>();
 
-        // ViewModels
+        // ViewModels (MainWindowViewModel takes all services via DI constructor)
         services.AddTransient<MainWindowViewModel>();
         services.AddTransient<ToolbarViewModel>();
         services.AddTransient<FindReplaceViewModel>();

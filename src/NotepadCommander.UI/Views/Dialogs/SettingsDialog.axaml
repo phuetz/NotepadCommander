@@ -42,6 +42,14 @@
                             <TextBlock Text="Retour a la ligne" VerticalAlignment="Center" />
                             <CheckBox Grid.Column="1" Name="WordWrapCheck" IsChecked="False" />
                         </Grid>
+                        <Grid ColumnDefinitions="200,*">
+                            <TextBlock Text="Surligner ligne courante" VerticalAlignment="Center" />
+                            <CheckBox Grid.Column="1" Name="HighlightLineCheck" IsChecked="True" />
+                        </Grid>
+                        <Grid ColumnDefinitions="200,*">
+                            <TextBlock Text="Afficher les espaces" VerticalAlignment="Center" />
+                            <CheckBox Grid.Column="1" Name="ShowWhitespaceCheck" IsChecked="False" />
+                        </Grid>
                     </StackPanel>
 
                     <Border Height="1" Background="{StaticResource BorderBrush}" />

@@ -36,6 +36,8 @@ public partial class SettingsDialog : Window
         var fontFamily = this.FindControl<TextBox>("FontFamilyInput");
         var lineNumbers = this.FindControl<CheckBox>("ShowLineNumbersCheck");
         var wordWrap = this.FindControl<CheckBox>("WordWrapCheck");
+        var highlightLine = this.FindControl<CheckBox>("HighlightLineCheck");
+        var showWhitespace = this.FindControl<CheckBox>("ShowWhitespaceCheck");
         var autoSave = this.FindControl<CheckBox>("AutoSaveCheck");
         var autoSaveInterval = this.FindControl<NumericUpDown>("AutoSaveIntervalInput");
         var theme = this.FindControl<ComboBox>("ThemeCombo");
@@ -44,6 +46,8 @@ public partial class SettingsDialog : Window
         if (fontFamily != null) fontFamily.Text = s.FontFamily;
         if (lineNumbers != null) lineNumbers.IsChecked = s.ShowLineNumbers;
         if (wordWrap != null) wordWrap.IsChecked = s.WordWrap;
+        if (highlightLine != null) highlightLine.IsChecked = s.HighlightCurrentLine;
+        if (showWhitespace != null) showWhitespace.IsChecked = s.ShowWhitespace;
         if (autoSave != null) autoSave.IsChecked = s.AutoSave;
         if (autoSaveInterval != null) autoSaveInterval.Value = s.AutoSaveIntervalSeconds;
         if (theme != null) theme.SelectedIndex = s.Theme == "Dark" ? 1 : 0;
@@ -56,6 +60,8 @@ public partial class SettingsDialog : Window
         var fontFamily = this.FindControl<TextBox>("FontFamilyInput");
         var lineNumbers = this.FindControl<CheckBox>("ShowLineNumbersCheck");
         var wordWrap = this.FindControl<CheckBox>("WordWrapCheck");
+        var highlightLine = this.FindControl<CheckBox>("HighlightLineCheck");
+        var showWhitespace = this.FindControl<CheckBox>("ShowWhitespaceCheck");
         var autoSave = this.FindControl<CheckBox>("AutoSaveCheck");
         var autoSaveInterval = this.FindControl<NumericUpDown>("AutoSaveIntervalInput");
         var theme = this.FindControl<ComboBox>("ThemeCombo");
@@ -64,10 +70,23 @@ public partial class SettingsDialog : Window
         if (fontFamily != null) s.FontFamily = fontFamily.Text ?? "Cascadia Code";
         if (lineNumbers != null) s.ShowLineNumbers = lineNumbers.IsChecked ?? true;
         if (wordWrap != null) s.WordWrap = wordWrap.IsChecked ?? false;
+        if (highlightLine != null) s.HighlightCurrentLine = highlightLine.IsChecked ?? true;
+        if (showWhitespace != null) s.ShowWhitespace = showWhitespace.IsChecked ?? false;
         if (autoSave != null) s.AutoSave = autoSave.IsChecked ?? false;
         if (autoSaveInterval?.Value != null) s.AutoSaveIntervalSeconds = (int)autoSaveInterval.Value;
         if (theme != null) s.Theme = theme.SelectedIndex == 1 ? "Dark" : "Light";
 
         _settingsService.Save();
+
+        // Apply settings to MainWindowViewModel if available
+        if (Owner is Window { DataContext: ViewModels.MainWindowViewModel mainVm })
+        {
+            mainVm.ShowLineNumbers = s.ShowLineNumbers;
+            mainVm.WordWrap = s.WordWrap;
+            mainVm.HighlightCurrentLine = s.HighlightCurrentLine;
+            mainVm.ShowWhitespace = s.ShowWhitespace;
+            if (s.Theme == "Dark") mainVm.SetThemeDarkCommand.Execute(null);
+            else mainVm.SetThemeLightCommand.Execute(null);
+        }
     }
 }

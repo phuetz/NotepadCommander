@@ -29,6 +29,8 @@
         <KeyBinding Gesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />
         <KeyBinding Gesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />
         <KeyBinding Gesture="Ctrl+D0" Command="{Binding ZoomResetCommand}" />
+        <KeyBinding Gesture="F11" Command="{Binding ToggleFullScreenCommand}" />
+        <KeyBinding Gesture="Ctrl+OemQuestion" Command="{Binding ToggleCommentCommand}" />
     </Window.KeyBindings>
 
     <DockPanel>
@@ -151,8 +153,14 @@
             </Grid>
         </Border>
 
-        <!-- Zone editeur avec panneau recherche -->
-        <Grid>
+        <!-- Zone principale : panneau lateral + editeur -->
+        <Grid ColumnDefinitions="Auto,*">
+            <!-- Panneau lateral -->
+            <components:SidePanel Grid.Column="0"
+                                   IsVisible="{Binding IsSidePanelVisible}" />
+
+            <!-- Zone editeur avec panneau recherche -->
+            <Grid Grid.Column="1">
             <components:EditorControl DataContext="{Binding ActiveTab}" />
 
             <!-- Panneau Rechercher/Remplacer -->
@@ -160,6 +168,49 @@
                                       VerticalAlignment="Top"
                                       HorizontalAlignment="Right"
                                       Margin="0,8,8,0" />
+
+            <!-- Palette de commandes -->
+            <Border IsVisible="{Binding IsCommandPaletteVisible}"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Center"
+                    Margin="0,20,0,0"
+                    Background="{StaticResource ToolbarBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Width="500"
+                    MaxHeight="400"
+                    BoxShadow="0 4 12 2 #40000000"
+                    ZIndex="100">
+                <StackPanel>
+                    <TextBox Text="{Binding CommandPaletteQuery, Mode=TwoWay}"
+                             Watermark="Tapez une commande..."
+                             Margin="8"
+                             x:Name="CommandPaletteInput" />
+                    <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding CommandPaletteItems}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="btn-toolbar"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Stretch"
+                                            Padding="12,8"
+                                            Command="{Binding $parent[Window].DataContext.ExecuteCommandPaletteItemCommand}"
+                                            CommandParameter="{Binding}">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Shortcut}"
+                                                       Foreground="#999999" FontSize="11"
+                                                       VerticalAlignment="Center" />
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+            </Grid>
         </Grid>
     </DockPanel>
 </Window>

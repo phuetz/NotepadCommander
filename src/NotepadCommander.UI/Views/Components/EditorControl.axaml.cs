@@ -108,6 +108,7 @@ public partial class EditorControl : UserControl
             _mainViewModel.CopyRequested += OnCopy;
             _mainViewModel.PasteRequested += OnPaste;
             _mainViewModel.SelectionRequested += OnSelectionRequested;
+            _mainViewModel.ToggleCommentRequested += OnToggleComment;
             _mainViewModel.PropertyChanged += OnMainViewModelPropertyChanged;
 
             _mainViewModel.FindReplaceViewModel.GetCurrentText = () => _textEditor?.Text ?? string.Empty;
@@ -136,6 +137,7 @@ public partial class EditorControl : UserControl
         _mainViewModel.CopyRequested -= OnCopy;
         _mainViewModel.PasteRequested -= OnPaste;
         _mainViewModel.SelectionRequested -= OnSelectionRequested;
+        _mainViewModel.ToggleCommentRequested -= OnToggleComment;
         _mainViewModel.PropertyChanged -= OnMainViewModelPropertyChanged;
         _mainViewModel.FindReplaceViewModel.NavigateToResult -= OnNavigateToResult;
         _mainViewModel.FindReplaceViewModel.ReplaceAllText -= OnReplaceAllText;
@@ -147,7 +149,9 @@ public partial class EditorControl : UserControl
     {
         if (e.PropertyName is nameof(MainWindowViewModel.ShowLineNumbers)
             or nameof(MainWindowViewModel.WordWrap)
-            or nameof(MainWindowViewModel.CurrentTheme))
+            or nameof(MainWindowViewModel.CurrentTheme)
+            or nameof(MainWindowViewModel.HighlightCurrentLine)
+            or nameof(MainWindowViewModel.ShowWhitespace))
         {
             ApplyViewSettings();
         }
@@ -166,6 +170,14 @@ public partial class EditorControl : UserControl
         _textEditor.Foreground = isDark
             ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#D4D4D4"))
             : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#333333"));
+
+        // Current line highlight
+        _textEditor.Options.HighlightCurrentLine = _mainViewModel.HighlightCurrentLine;
+
+        // Show whitespace
+        _textEditor.Options.ShowEndOfLine = _mainViewModel.ShowWhitespace;
+        _textEditor.Options.ShowSpaces = _mainViewModel.ShowWhitespace;
+        _textEditor.Options.ShowTabs = _mainViewModel.ShowWhitespace;
 
         var themeName = isDark ? ThemeName.DarkPlus : ThemeName.LightPlus;
         _registryOptions = new RegistryOptions(themeName);
@@ -230,6 +242,45 @@ public partial class EditorControl : UserControl
         _isUpdatingFromViewModel = false;
         if (_currentViewModel != null)
             _currentViewModel.Content = newText;
+    }
+
+    private void OnToggleComment(string _)
+    {
+        if (_textEditor == null || _currentViewModel == null || _mainViewModel == null) return;
+
+        var textArea = _textEditor.TextArea;
+        var doc = _textEditor.Document;
+
+        // Determine affected lines
+        int startLine, endLine;
+        if (textArea.Selection.IsEmpty)
+        {
+            startLine = endLine = textArea.Caret.Line;
+        }
+        else
+        {
+            var selStart = textArea.Selection.SurroundingSegment;
+            if (selStart == null) return;
+            startLine = doc.GetLineByOffset(selStart.Offset).LineNumber;
+            endLine = doc.GetLineByOffset(selStart.EndOffset).LineNumber;
+        }
+
+        // Get text of affected lines
+        var firstDocLine = doc.GetLineByNumber(startLine);
+        var lastDocLine = doc.GetLineByNumber(endLine);
+        var offset = firstDocLine.Offset;
+        var length = lastDocLine.EndOffset - firstDocLine.Offset;
+        var linesText = doc.GetText(offset, length);
+
+        // Toggle comment
+        var commented = _mainViewModel.CommentService.ToggleComment(linesText, _currentViewModel.Language);
+
+        // Replace in document
+        _isUpdatingFromViewModel = true;
+        doc.Replace(offset, length, commented);
+        _isUpdatingFromViewModel = false;
+
+        _currentViewModel.Content = _textEditor.Text ?? string.Empty;
     }
 
     private void OnSelectionChanged(object? sender, EventArgs e)
