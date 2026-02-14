@@ -4,6 +4,7 @@
              RequestedThemeVariant="Light">
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
         <StyleInclude Source="avares://NotepadCommander.UI/Assets/Styles/Theme.axaml" />
     </Application.Styles>
 </Application>

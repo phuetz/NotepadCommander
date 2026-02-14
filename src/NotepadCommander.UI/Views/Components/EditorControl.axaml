@@ -3,7 +3,7 @@
              xmlns:aedit="https://github.com/avaloniaui/avaloniaedit"
              xmlns:vm="using:NotepadCommander.UI.ViewModels"
              x:Class="NotepadCommander.UI.Views.Components.EditorControl"
-             x:DataType="vm:DocumentTabViewModel">
+             x:CompileBindings="False">
 
     <Grid>
         <aedit:TextEditor x:Name="Editor"

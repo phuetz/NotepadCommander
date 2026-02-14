@@ -414,6 +414,13 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (param is Avalonia.Controls.TopLevel topLevel)
             return topLevel;
+
+        // Fallback: KeyBindings pass $self (the KeyBinding), not the Window.
+        // Get the main window from the application lifetime.
+        if (Avalonia.Application.Current?.ApplicationLifetime
+            is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+            return desktop.MainWindow;
+
         return null;
     }
 }

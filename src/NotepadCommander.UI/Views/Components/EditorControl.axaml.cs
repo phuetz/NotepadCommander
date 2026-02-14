@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using AvaloniaEdit;
 using AvaloniaEdit.TextMate;
 using NotepadCommander.Core.Models;
@@ -19,47 +20,75 @@ public partial class EditorControl : UserControl
     private bool _isUpdatingFromViewModel;
     private DocumentTabViewModel? _currentViewModel;
     private MainWindowViewModel? _mainViewModel;
-    private bool _initialized;
-    private bool _contentLoaded;
+    private bool _editorInitialized;
 
     public EditorControl()
     {
         InitializeComponent();
+
+        _textEditor = this.FindControl<TextEditor>("Editor");
+
+        if (_textEditor != null)
+            InitializeEditor();
+
         DataContextChanged += OnDataContextChanged;
+    }
+
+    private void InitializeEditor()
+    {
+        if (_textEditor == null || _editorInitialized) return;
+        _editorInitialized = true;
+
+        // TextMate installation is deferred to ApplyViewSettings (when theme info is available)
+        // or to OnLoaded as a fallback
+        _textEditor.TextChanged += OnTextChanged;
+        _textEditor.TextArea.SelectionChanged += OnSelectionChanged;
+        _textEditor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
+
+        // Ensure a valid font size even if the binding fails
+        if (_textEditor.FontSize <= 0)
+            _textEditor.FontSize = 14;
     }
 
     protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
-        EnsureEditorInitialized();
 
-        // DataContext was set before editor was ready - load content now
-        if (_textEditor != null && _currentViewModel != null && !_contentLoaded)
+        if (_textEditor == null)
         {
+            _textEditor = this.FindControl<TextEditor>("Editor")
+                          ?? this.GetVisualDescendants().OfType<TextEditor>().FirstOrDefault();
+
+            if (_textEditor != null)
+                InitializeEditor();
+        }
+
+        // Ensure TextMate is set up if ConnectToMainViewModel hasn't done it yet
+        if (_textEditor != null && _textMateInstallation == null)
+        {
+            _registryOptions = new RegistryOptions(ThemeName.LightPlus);
+            _textMateInstallation = _textEditor.InstallTextMate(_registryOptions);
+        }
+
+        // Load pending content
+        if (_textEditor != null && _currentViewModel != null)
             LoadContent(_currentViewModel);
-        }
-    }
 
-    private void EnsureEditorInitialized()
-    {
-        if (_initialized) return;
-
-        _textEditor = this.FindControl<TextEditor>("Editor");
-
-        if (_textEditor != null)
-        {
-            _initialized = true;
-            SetupTextMate();
-            _textEditor.TextChanged += OnTextChanged;
-            _textEditor.TextArea.SelectionChanged += OnSelectionChanged;
-            _textEditor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
-        }
+        // Focus the editor so the cursor is visible and typing works immediately
+        _textEditor?.TextArea.Focus();
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        EnsureEditorInitialized();
+
+        if (_textEditor == null)
+        {
+            _textEditor = this.FindControl<TextEditor>("Editor");
+            if (_textEditor != null)
+                InitializeEditor();
+        }
+
         ConnectToMainViewModel();
     }
 
@@ -87,6 +116,14 @@ public partial class EditorControl : UserControl
             _mainViewModel.FindReplaceViewModel.ReplaceAllText += OnReplaceAllText;
 
             ApplyViewSettings();
+
+            // Re-apply content after theme setup (InstallTextMate may reset the document)
+            if (_currentViewModel != null && _textEditor != null)
+            {
+                _isUpdatingFromViewModel = true;
+                _textEditor.Text = _currentViewModel.Content;
+                _isUpdatingFromViewModel = false;
+            }
         }
     }
 
@@ -122,7 +159,6 @@ public partial class EditorControl : UserControl
         _textEditor.ShowLineNumbers = _mainViewModel.ShowLineNumbers;
         _textEditor.WordWrap = _mainViewModel.WordWrap;
 
-        // Apply theme colors
         var isDark = _mainViewModel.CurrentTheme == "Dark";
         _textEditor.Background = isDark
             ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1E1E1E"))
@@ -131,9 +167,11 @@ public partial class EditorControl : UserControl
             ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#D4D4D4"))
             : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#333333"));
 
-        // Reinstall TextMate with correct theme
         var themeName = isDark ? ThemeName.DarkPlus : ThemeName.LightPlus;
         _registryOptions = new RegistryOptions(themeName);
+
+        // Dispose old installation before creating new one
+        _textMateInstallation?.Dispose();
         _textMateInstallation = _textEditor.InstallTextMate(_registryOptions);
 
         if (_currentViewModel != null)
@@ -153,7 +191,6 @@ public partial class EditorControl : UserControl
     }
 
     private void OnCut() => _textEditor?.Cut();
-
     private void OnCopy() => _textEditor?.Copy();
 
     private async void OnPaste()
@@ -182,7 +219,7 @@ public partial class EditorControl : UserControl
         var offset = _textEditor.Document.GetOffset(result.Line, result.Column);
         _textEditor.Select(offset, result.Length);
         _textEditor.ScrollTo(result.Line, result.Column);
-        _textEditor.Focus();
+        _textEditor.TextArea.Focus();
     }
 
     private void OnReplaceAllText(string newText)
@@ -192,9 +229,7 @@ public partial class EditorControl : UserControl
         _textEditor.Text = newText;
         _isUpdatingFromViewModel = false;
         if (_currentViewModel != null)
-        {
             _currentViewModel.Content = newText;
-        }
     }
 
     private void OnSelectionChanged(object? sender, EventArgs e)
@@ -204,13 +239,6 @@ public partial class EditorControl : UserControl
         _mainViewModel.SelectedText = selection.IsEmpty ? null : _textEditor.SelectedText;
     }
 
-    private void SetupTextMate()
-    {
-        if (_textEditor == null) return;
-        _registryOptions = new RegistryOptions(ThemeName.LightPlus);
-        _textMateInstallation = _textEditor.InstallTextMate(_registryOptions);
-    }
-
     private void LoadContent(DocumentTabViewModel viewModel)
     {
         if (_textEditor == null) return;
@@ -218,30 +246,24 @@ public partial class EditorControl : UserControl
         _isUpdatingFromViewModel = true;
         _textEditor.Text = viewModel.Content;
         _isUpdatingFromViewModel = false;
-        _contentLoaded = true;
 
         ApplySyntaxHighlighting(viewModel.Language);
+        viewModel.PropertyChanged -= OnViewModelPropertyChanged; // prevent double subscribe
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
-
-        ConnectToMainViewModel();
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
-        // Unsubscribe from previous ViewModel
         if (_currentViewModel != null)
-        {
             _currentViewModel.PropertyChanged -= OnViewModelPropertyChanged;
-        }
 
-        _contentLoaded = false;
         _currentViewModel = DataContext as DocumentTabViewModel;
 
         if (_currentViewModel != null && _textEditor != null)
         {
             LoadContent(_currentViewModel);
+            _textEditor.TextArea.Focus();
         }
-        // If _textEditor is null, OnLoaded will call LoadContent later
     }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -298,9 +320,7 @@ public partial class EditorControl : UserControl
 
         var scopeName = GetScopeName(language);
         if (scopeName != null)
-        {
             _textMateInstallation.SetGrammar(scopeName);
-        }
     }
 
     private string? GetScopeName(SupportedLanguage language) => language switch
