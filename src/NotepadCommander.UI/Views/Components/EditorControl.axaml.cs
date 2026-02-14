@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using AvaloniaEdit;
 using AvaloniaEdit.TextMate;
 using NotepadCommander.Core.Models;
@@ -18,31 +19,52 @@ public partial class EditorControl : UserControl
     private bool _isUpdatingFromViewModel;
     private DocumentTabViewModel? _currentViewModel;
     private MainWindowViewModel? _mainViewModel;
+    private bool _initialized;
+    private bool _contentLoaded;
 
     public EditorControl()
     {
         InitializeComponent();
-        _textEditor = this.FindControl<TextEditor>("TextEditor");
+        DataContextChanged += OnDataContextChanged;
+    }
+
+    protected override void OnLoaded(RoutedEventArgs e)
+    {
+        base.OnLoaded(e);
+        EnsureEditorInitialized();
+
+        // DataContext was set before editor was ready - load content now
+        if (_textEditor != null && _currentViewModel != null && !_contentLoaded)
+        {
+            LoadContent(_currentViewModel);
+        }
+    }
+
+    private void EnsureEditorInitialized()
+    {
+        if (_initialized) return;
+
+        _textEditor = this.FindControl<TextEditor>("Editor");
 
         if (_textEditor != null)
         {
+            _initialized = true;
             SetupTextMate();
             _textEditor.TextChanged += OnTextChanged;
             _textEditor.TextArea.SelectionChanged += OnSelectionChanged;
+            _textEditor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
         }
-
-        DataContextChanged += OnDataContextChanged;
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        EnsureEditorInitialized();
         ConnectToMainViewModel();
     }
 
     private void ConnectToMainViewModel()
     {
-        // Walk up to find MainWindowViewModel
         var window = TopLevel.GetTopLevel(this);
         if (window?.DataContext is MainWindowViewModel mainVm && _mainViewModel != mainVm)
         {
@@ -51,7 +73,6 @@ public partial class EditorControl : UserControl
 
             _mainViewModel = mainVm;
 
-            // Subscribe to editor action events
             _mainViewModel.UndoRequested += OnUndo;
             _mainViewModel.RedoRequested += OnRedo;
             _mainViewModel.CutRequested += OnCut;
@@ -60,13 +81,11 @@ public partial class EditorControl : UserControl
             _mainViewModel.SelectionRequested += OnSelectionRequested;
             _mainViewModel.PropertyChanged += OnMainViewModelPropertyChanged;
 
-            // Wire FindReplace
             _mainViewModel.FindReplaceViewModel.GetCurrentText = () => _textEditor?.Text ?? string.Empty;
             _mainViewModel.FindReplaceViewModel.GetCurrentOffset = () => _textEditor?.CaretOffset ?? 0;
             _mainViewModel.FindReplaceViewModel.NavigateToResult += OnNavigateToResult;
             _mainViewModel.FindReplaceViewModel.ReplaceAllText += OnReplaceAllText;
 
-            // Apply current settings
             ApplyViewSettings();
         }
     }
@@ -83,6 +102,8 @@ public partial class EditorControl : UserControl
         _mainViewModel.PropertyChanged -= OnMainViewModelPropertyChanged;
         _mainViewModel.FindReplaceViewModel.NavigateToResult -= OnNavigateToResult;
         _mainViewModel.FindReplaceViewModel.ReplaceAllText -= OnReplaceAllText;
+        _mainViewModel.FindReplaceViewModel.GetCurrentText = null;
+        _mainViewModel.FindReplaceViewModel.GetCurrentOffset = null;
     }
 
     private void OnMainViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -101,24 +122,22 @@ public partial class EditorControl : UserControl
         _textEditor.ShowLineNumbers = _mainViewModel.ShowLineNumbers;
         _textEditor.WordWrap = _mainViewModel.WordWrap;
 
-        // Apply theme
-        if (_registryOptions != null && _textMateInstallation != null)
-        {
-            var themeName = _mainViewModel.CurrentTheme == "Dark" ? ThemeName.DarkPlus : ThemeName.LightPlus;
-            _registryOptions = new RegistryOptions(themeName);
-            _textMateInstallation = _textEditor.InstallTextMate(_registryOptions);
+        // Apply theme colors
+        var isDark = _mainViewModel.CurrentTheme == "Dark";
+        _textEditor.Background = isDark
+            ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1E1E1E"))
+            : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.White);
+        _textEditor.Foreground = isDark
+            ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#D4D4D4"))
+            : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#333333"));
 
-            _textEditor.Background = _mainViewModel.CurrentTheme == "Dark"
-                ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1E1E1E"))
-                : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.White);
-            _textEditor.Foreground = _mainViewModel.CurrentTheme == "Dark"
-                ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#D4D4D4"))
-                : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#333333"));
+        // Reinstall TextMate with correct theme
+        var themeName = isDark ? ThemeName.DarkPlus : ThemeName.LightPlus;
+        _registryOptions = new RegistryOptions(themeName);
+        _textMateInstallation = _textEditor.InstallTextMate(_registryOptions);
 
-            // Re-apply syntax highlighting
-            if (_currentViewModel != null)
-                ApplySyntaxHighlighting(_currentViewModel.Language);
-        }
+        if (_currentViewModel != null)
+            ApplySyntaxHighlighting(_currentViewModel.Language);
     }
 
     private void OnUndo()
@@ -133,15 +152,9 @@ public partial class EditorControl : UserControl
             _textEditor.Document.UndoStack.Redo();
     }
 
-    private void OnCut()
-    {
-        _textEditor?.Cut();
-    }
+    private void OnCut() => _textEditor?.Cut();
 
-    private void OnCopy()
-    {
-        _textEditor?.Copy();
-    }
+    private void OnCopy() => _textEditor?.Copy();
 
     private async void OnPaste()
     {
@@ -188,14 +201,7 @@ public partial class EditorControl : UserControl
     {
         if (_textEditor == null || _mainViewModel == null) return;
         var selection = _textEditor.TextArea.Selection;
-        if (!selection.IsEmpty)
-        {
-            _mainViewModel.SelectedText = _textEditor.SelectedText;
-        }
-        else
-        {
-            _mainViewModel.SelectedText = null;
-        }
+        _mainViewModel.SelectedText = selection.IsEmpty ? null : _textEditor.SelectedText;
     }
 
     private void SetupTextMate()
@@ -205,29 +211,37 @@ public partial class EditorControl : UserControl
         _textMateInstallation = _textEditor.InstallTextMate(_registryOptions);
     }
 
+    private void LoadContent(DocumentTabViewModel viewModel)
+    {
+        if (_textEditor == null) return;
+
+        _isUpdatingFromViewModel = true;
+        _textEditor.Text = viewModel.Content;
+        _isUpdatingFromViewModel = false;
+        _contentLoaded = true;
+
+        ApplySyntaxHighlighting(viewModel.Language);
+        viewModel.PropertyChanged += OnViewModelPropertyChanged;
+
+        ConnectToMainViewModel();
+    }
+
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
+        // Unsubscribe from previous ViewModel
         if (_currentViewModel != null)
         {
             _currentViewModel.PropertyChanged -= OnViewModelPropertyChanged;
         }
 
+        _contentLoaded = false;
         _currentViewModel = DataContext as DocumentTabViewModel;
 
         if (_currentViewModel != null && _textEditor != null)
         {
-            _isUpdatingFromViewModel = true;
-            _textEditor.Text = _currentViewModel.Content;
-            _isUpdatingFromViewModel = false;
-
-            ApplySyntaxHighlighting(_currentViewModel.Language);
-            _currentViewModel.PropertyChanged += OnViewModelPropertyChanged;
-
-            _textEditor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
-
-            // Try to connect to main VM if not yet done
-            ConnectToMainViewModel();
+            LoadContent(_currentViewModel);
         }
+        // If _textEditor is null, OnLoaded will call LoadContent later
     }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -247,7 +261,6 @@ public partial class EditorControl : UserControl
         }
         else if (e.PropertyName == nameof(DocumentTabViewModel.CursorLine) && _currentViewModel != null && _textEditor != null)
         {
-            // Navigate to line when CursorLine changes externally (GoToLine dialog)
             var caret = _textEditor.TextArea.Caret;
             if (caret.Line != _currentViewModel.CursorLine)
             {

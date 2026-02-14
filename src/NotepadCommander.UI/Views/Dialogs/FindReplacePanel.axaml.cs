@@ -15,14 +15,16 @@ public partial class FindReplacePanel : UserControl
     {
         base.OnKeyDown(e);
 
-        if (e.Key == Key.Escape && DataContext is FindReplaceViewModel vm)
+        if (DataContext is not FindReplaceViewModel vm) return;
+
+        if (e.Key == Key.Escape)
         {
             vm.CloseCommand.Execute(null);
             e.Handled = true;
         }
-        else if (e.Key == Key.Enter && DataContext is FindReplaceViewModel vm2)
+        else if (e.Key == Key.Enter)
         {
-            vm2.FindNextCommand.Execute(null);
+            vm.FindNextCommand.Execute(null);
             e.Handled = true;
         }
     }

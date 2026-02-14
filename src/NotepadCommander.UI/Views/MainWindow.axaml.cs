@@ -8,6 +8,8 @@ namespace NotepadCommander.UI.Views;
 
 public partial class MainWindow : Window
 {
+    private bool _forceClose;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -55,25 +57,28 @@ public partial class MainWindow : Window
     {
         base.OnClosing(e);
 
+        if (_forceClose) return;
         if (DataContext is not MainWindowViewModel vm) return;
 
         var modifiedTabs = vm.Tabs.Where(t => t.IsModified).ToList();
-        if (modifiedTabs.Count > 0)
+        if (modifiedTabs.Count == 0) return;
+
+        // Cancel the close, handle async save, then re-close
+        e.Cancel = true;
+
+        var dialog = new SavePromptDialog();
+        await dialog.ShowDialog(this);
+
+        if (dialog.Result == SavePromptResult.Cancel)
+            return;
+
+        if (dialog.Result == SavePromptResult.Save)
         {
-            var dialog = new SavePromptDialog();
-            await dialog.ShowDialog(this);
-
-            if (dialog.Result == SavePromptResult.Cancel)
-            {
-                e.Cancel = true;
-                return;
-            }
-
-            if (dialog.Result == SavePromptResult.Save)
-            {
-                await vm.SaveAllFilesCommand.ExecuteAsync(this);
-            }
+            await vm.SaveAllFilesCommand.ExecuteAsync(this);
         }
+
+        _forceClose = true;
+        Close();
     }
 
     protected override async void OnKeyDown(KeyEventArgs e)
@@ -82,7 +87,6 @@ public partial class MainWindow : Window
 
         if (DataContext is not MainWindowViewModel vm) return;
 
-        // Ctrl+1..5 pour selection onglet ruban
         if (e.KeyModifiers == KeyModifiers.Control)
         {
             var num = e.Key switch
@@ -103,7 +107,6 @@ public partial class MainWindow : Window
             }
         }
 
-        // Ctrl+G : Aller a la ligne
         if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.G)
         {
             await ShowGoToLineDialog(vm);
