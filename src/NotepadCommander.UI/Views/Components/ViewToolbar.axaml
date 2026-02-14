@@ -45,7 +45,7 @@
         <Border Classes="ribbon-group">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="2">
-                    <Button Classes="toolbar-button" ToolTip.Tip="Retour a la ligne">
+                    <Button Classes="toolbar-button" Command="{Binding ToggleWordWrapCommand}" ToolTip.Tip="Retour a la ligne">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center">
                                 <Path Data="M18,4H6V2H18V4M18,6H6A2,2 0 0,0 4,8V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8A2,2 0 0,0 18,6M6,8H18V20H6V8Z"
@@ -54,7 +54,7 @@
                             <TextBlock Text="Retour ligne" />
                         </StackPanel>
                     </Button>
-                    <Button Classes="toolbar-button" ToolTip.Tip="Numeros de ligne">
+                    <Button Classes="toolbar-button" Command="{Binding ToggleLineNumbersCommand}" ToolTip.Tip="Numeros de ligne">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <TextBlock Text="1 2 3" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center"
                                        Foreground="{StaticResource TextSecondaryBrush}" />
@@ -72,7 +72,7 @@
         <Border Classes="ribbon-group">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="2">
-                    <Button Classes="toolbar-button" ToolTip.Tip="Theme clair">
+                    <Button Classes="toolbar-button" Command="{Binding SetThemeLightCommand}" ToolTip.Tip="Theme clair">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center">
                                 <Path Data="M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8M12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18M20,8.69V4H15.31L12,0.69L8.69,4H4V8.69L0.69,12L4,15.31V20H8.69L12,23.31L15.31,20H20V15.31L23.31,12L20,8.69Z"
@@ -81,7 +81,7 @@
                             <TextBlock Text="Clair" />
                         </StackPanel>
                     </Button>
-                    <Button Classes="toolbar-button" ToolTip.Tip="Theme sombre">
+                    <Button Classes="toolbar-button" Command="{Binding SetThemeDarkCommand}" ToolTip.Tip="Theme sombre">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center">
                                 <Path Data="M12,18C11.11,18 10.26,17.8 9.5,17.45C11.56,16.5 13,14.42 13,12C13,9.58 11.56,7.5 9.5,6.55C10.26,6.2 11.11,6 12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18M20,8.69V4H15.31L12,0.69L8.69,4H4V8.69L0.69,12L4,15.31V20H8.69L12,23.31L15.31,20H20V15.31L23.31,12L20,8.69Z"

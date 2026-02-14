@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using NotepadCommander.UI.ViewModels;
 using NotepadCommander.UI.Views.Dialogs;
 
@@ -37,6 +38,40 @@ public partial class MainWindow : Window
             if (File.Exists(path))
             {
                 await vm.OpenFilePath(path);
+            }
+        }
+    }
+
+    private void OnTabClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: DocumentTabViewModel tab } &&
+            DataContext is MainWindowViewModel vm)
+        {
+            vm.ActiveTab = tab;
+        }
+    }
+
+    protected override async void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+
+        if (DataContext is not MainWindowViewModel vm) return;
+
+        var modifiedTabs = vm.Tabs.Where(t => t.IsModified).ToList();
+        if (modifiedTabs.Count > 0)
+        {
+            var dialog = new SavePromptDialog();
+            await dialog.ShowDialog(this);
+
+            if (dialog.Result == SavePromptResult.Cancel)
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            if (dialog.Result == SavePromptResult.Save)
+            {
+                await vm.SaveAllFilesCommand.ExecuteAsync(this);
             }
         }
     }
@@ -86,7 +121,6 @@ public partial class MainWindow : Window
 
         if (dialog.SelectedLine.HasValue)
         {
-            // Navigate to line - handled by EditorControl via binding
             vm.ActiveTab.CursorLine = dialog.SelectedLine.Value;
         }
     }

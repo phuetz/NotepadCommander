@@ -68,6 +68,7 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="2">
                     <Button Classes="toolbar-button"
+                            Command="{Binding UndoCommand}"
                             ToolTip.Tip="Annuler (Ctrl+Z)">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center">
@@ -78,6 +79,7 @@
                         </StackPanel>
                     </Button>
                     <Button Classes="toolbar-button"
+                            Command="{Binding RedoCommand}"
                             ToolTip.Tip="Refaire (Ctrl+Y)">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center">
@@ -99,6 +101,7 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="2">
                     <Button Classes="toolbar-button"
+                            Command="{Binding CutCommand}"
                             ToolTip.Tip="Couper (Ctrl+X)">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center">
@@ -109,6 +112,7 @@
                         </StackPanel>
                     </Button>
                     <Button Classes="toolbar-button"
+                            Command="{Binding CopyCommand}"
                             ToolTip.Tip="Copier (Ctrl+C)">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center">
@@ -119,6 +123,7 @@
                         </StackPanel>
                     </Button>
                     <Button Classes="toolbar-button"
+                            Command="{Binding PasteCommand}"
                             ToolTip.Tip="Coller (Ctrl+V)">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center">
@@ -140,6 +145,7 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="2">
                     <Button Classes="toolbar-button"
+                            Command="{Binding ShowFindCommand}"
                             ToolTip.Tip="Rechercher (Ctrl+F)">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center">

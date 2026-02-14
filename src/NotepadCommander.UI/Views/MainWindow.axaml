@@ -24,6 +24,8 @@
         <KeyBinding Gesture="Ctrl+Shift+Tab" Command="{Binding PreviousTabCommand}" />
         <KeyBinding Gesture="Ctrl+F" Command="{Binding ShowFindCommand}" />
         <KeyBinding Gesture="Ctrl+H" Command="{Binding ShowReplaceCommand}" />
+        <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+        <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
         <KeyBinding Gesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />
         <KeyBinding Gesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />
         <KeyBinding Gesture="Ctrl+D0" Command="{Binding ZoomResetCommand}" />
@@ -53,7 +55,9 @@
                         <DataTemplate x:DataType="vm:DocumentTabViewModel">
                             <Button Classes="btn-toolbar"
                                     Padding="10,6"
-                                    ToolTip.Tip="{Binding FilePath}">
+                                    ToolTip.Tip="{Binding FilePath}"
+                                    Tag="{Binding}"
+                                    Click="OnTabClick">
                                 <Button.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Fermer"

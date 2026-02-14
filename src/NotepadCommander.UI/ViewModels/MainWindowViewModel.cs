@@ -36,6 +36,16 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private double zoomLevel = 100;
 
+    // View toggle properties
+    [ObservableProperty]
+    private bool showLineNumbers = true;
+
+    [ObservableProperty]
+    private bool wordWrap;
+
+    [ObservableProperty]
+    private string currentTheme = "Light";
+
     // LOT 5: Tools properties
     [ObservableProperty]
     private bool isDiffViewVisible;
@@ -58,6 +68,14 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string? selectedText;
 
+    // Editor action events - EditorControl subscribes to these
+    public event Action? UndoRequested;
+    public event Action? RedoRequested;
+    public event Action? CutRequested;
+    public event Action? CopyRequested;
+    public event Action? PasteRequested;
+    public event Action<int, int>? SelectionRequested; // offset, length
+
     public MainWindowViewModel(
         IFileService fileService,
         IRecentFilesService recentFilesService,
@@ -72,6 +90,10 @@ public partial class MainWindowViewModel : ViewModelBase
         _settingsService = settingsService;
         _errorHandler = errorHandler;
         _logger = logger;
+
+        ShowLineNumbers = settingsService.Settings.ShowLineNumbers;
+        WordWrap = settingsService.Settings.WordWrap;
+        CurrentTheme = settingsService.Settings.Theme;
 
         ToolbarViewModel = new ToolbarViewModel(this);
         FindReplaceViewModel = new FindReplaceViewModel(searchReplaceService);
@@ -253,7 +275,6 @@ public partial class MainWindowViewModel : ViewModelBase
         tab ??= ActiveTab;
         if (tab == null) return;
 
-        // Note: Save prompt is handled in MainWindow.cs code-behind via ShowSavePromptAsync
         var index = Tabs.IndexOf(tab);
         Tabs.Remove(tab);
 
@@ -308,6 +329,51 @@ public partial class MainWindowViewModel : ViewModelBase
     private void ShowReplace()
     {
         FindReplaceViewModel.Show(true);
+    }
+
+    // Editor actions - delegate to AvaloniaEdit
+    [RelayCommand]
+    private void Undo() => UndoRequested?.Invoke();
+
+    [RelayCommand]
+    private void Redo() => RedoRequested?.Invoke();
+
+    [RelayCommand]
+    private void Cut() => CutRequested?.Invoke();
+
+    [RelayCommand]
+    private void Copy() => CopyRequested?.Invoke();
+
+    [RelayCommand]
+    private void Paste() => PasteRequested?.Invoke();
+
+    // View toggles
+    [RelayCommand]
+    private void ToggleWordWrap()
+    {
+        WordWrap = !WordWrap;
+        _settingsService.Settings.WordWrap = WordWrap;
+    }
+
+    [RelayCommand]
+    private void ToggleLineNumbers()
+    {
+        ShowLineNumbers = !ShowLineNumbers;
+        _settingsService.Settings.ShowLineNumbers = ShowLineNumbers;
+    }
+
+    [RelayCommand]
+    private void SetThemeLight()
+    {
+        CurrentTheme = "Light";
+        _settingsService.Settings.Theme = "Light";
+    }
+
+    [RelayCommand]
+    private void SetThemeDark()
+    {
+        CurrentTheme = "Dark";
+        _settingsService.Settings.Theme = "Dark";
     }
 
     [RelayCommand]
