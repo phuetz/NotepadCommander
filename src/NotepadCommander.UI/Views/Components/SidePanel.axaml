@@ -11,8 +11,8 @@
             BorderBrush="{StaticResource BorderBrush}"
             BorderThickness="0,0,1,0">
         <Grid RowDefinitions="Auto,Auto,Auto,*">
-            <!-- Tab selector: Fichiers / Recherche -->
-            <Grid ColumnDefinitions="*,*" Row="0">
+            <!-- Tab selector: Fichiers / Recherche / Methodes -->
+            <Grid ColumnDefinitions="*,*,*" Row="0">
                 <Button Name="FilesTabButton"
                         Content="FICHIERS"
                         HorizontalAlignment="Stretch"
@@ -32,6 +32,16 @@
                         FontWeight="SemiBold"
                         Padding="8,6"
                         Click="OnSearchTabClick" />
+                <Button Name="MethodsTabButton"
+                        Grid.Column="2"
+                        Content="METHODES"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Classes="btn-toolbar"
+                        FontSize="10"
+                        FontWeight="SemiBold"
+                        Padding="8,6"
+                        Click="OnMethodsTabClick" />
             </Grid>
 
             <!-- Files panel content -->
@@ -95,6 +105,11 @@
             <components:SearchPanel Grid.Row="3"
                                      Name="SearchPanelView"
                                      IsVisible="False" />
+
+            <!-- Method search panel -->
+            <components:MethodSearchPanel Grid.Row="3"
+                                           Name="MethodSearchPanelView"
+                                           IsVisible="False" />
         </Grid>
     </Border>
 </UserControl>

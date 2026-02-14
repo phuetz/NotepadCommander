@@ -105,6 +105,9 @@ public partial class MainWindowViewModel : ViewModelBase
     // Search in files event
     public event Action? ShowSearchInFilesRequested;
 
+    // Method search event
+    public event Action? ShowMethodSearchRequested;
+
     // Editor action events - EditorControl subscribes to these
     public event Action? UndoRequested;
     public event Action? RedoRequested;
@@ -637,6 +640,14 @@ public partial class MainWindowViewModel : ViewModelBase
         ShowSearchInFilesRequested?.Invoke();
     }
 
+    // Method search
+    [RelayCommand]
+    private void ShowMethodSearch()
+    {
+        IsSidePanelVisible = true;
+        ShowMethodSearchRequested?.Invoke();
+    }
+
     // Command palette
     [RelayCommand]
     private void ShowCommandPalette()
@@ -696,6 +707,7 @@ public partial class MainWindowViewModel : ViewModelBase
             new("Afficher espaces", "", () => ToggleShowWhitespace()),
             new("Panneau lateral", "", () => ToggleSidePanel()),
             new("Rechercher dans les fichiers", "Ctrl+Shift+F", () => ShowSearchInFiles()),
+            new("Extraction de methodes", "Ctrl+Shift+M", () => ShowMethodSearch()),
             new("Onglet suivant", "Ctrl+Tab", () => NextTab()),
             new("Onglet precedent", "Ctrl+Shift+Tab", () => PreviousTab()),
         };

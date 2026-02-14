@@ -39,6 +39,9 @@ public partial class MainWindow : Window
             // Subscribe to search in files
             vm.ShowSearchInFilesRequested += OnShowSearchInFiles;
 
+            // Subscribe to method search
+            vm.ShowMethodSearchRequested += OnShowMethodSearch;
+
             // Restore session
             Dispatcher.UIThread.Post(async () =>
             {
@@ -192,6 +195,14 @@ public partial class MainWindow : Window
             return;
         }
 
+        // Method search: Ctrl+Shift+M
+        if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && e.Key == Key.M)
+        {
+            vm.ShowMethodSearchCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
         // Command palette: Ctrl+Shift+P
         if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && e.Key == Key.P)
         {
@@ -248,6 +259,13 @@ public partial class MainWindow : Window
         // Find the SidePanel in the visual tree and switch to search tab
         var sidePanel = this.GetVisualDescendants().OfType<SidePanel>().FirstOrDefault();
         sidePanel?.ShowSearchTab();
+    }
+
+    private void OnShowMethodSearch()
+    {
+        // Find the SidePanel in the visual tree and switch to methods tab
+        var sidePanel = this.GetVisualDescendants().OfType<SidePanel>().FirstOrDefault();
+        sidePanel?.ShowMethodsTab();
     }
 
     private async Task ShowGoToLineDialog(MainWindowViewModel vm)

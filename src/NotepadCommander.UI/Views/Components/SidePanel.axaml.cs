@@ -16,7 +16,8 @@ public partial class SidePanel : UserControl
     private readonly IFileExplorerService _fileExplorerService;
     private FileTreeNode? _rootNode;
     private string? _currentFolderPath;
-    private bool _isSearchTab;
+    private enum SidePanelTab { Files, Search, Methods }
+    private SidePanelTab _activeTab;
 
     public SidePanel()
     {
@@ -42,37 +43,53 @@ public partial class SidePanel : UserControl
 
     public void ShowSearchTab()
     {
-        _isSearchTab = true;
-        var filesPanel = this.FindControl<Grid>("FilesPanel");
-        var filesHeader = this.FindControl<Border>("FilesHeader");
-        var folderPath = this.FindControl<TextBlock>("FolderPathText");
-        var searchPanel = this.FindControl<SearchPanel>("SearchPanelView");
+        _activeTab = SidePanelTab.Search;
+        UpdatePanelVisibility();
 
-        if (filesPanel != null) filesPanel.IsVisible = false;
-        if (filesHeader != null) filesHeader.IsVisible = false;
-        if (folderPath != null) folderPath.IsVisible = false;
+        var searchPanel = this.FindControl<SearchPanel>("SearchPanelView");
         if (searchPanel != null)
         {
-            searchPanel.IsVisible = true;
             searchPanel.SetSearchDirectory(_currentFolderPath);
             searchPanel.FocusSearchBox();
         }
+    }
 
-        UpdateTabHighlights();
+    public void ShowMethodsTab()
+    {
+        _activeTab = SidePanelTab.Methods;
+        UpdatePanelVisibility();
+
+        var methodPanel = this.FindControl<MethodSearchPanel>("MethodSearchPanelView");
+        if (methodPanel != null)
+        {
+            methodPanel.SetSearchDirectory(_currentFolderPath);
+            methodPanel.FocusInput();
+        }
     }
 
     private void ShowFilesTab()
     {
-        _isSearchTab = false;
+        _activeTab = SidePanelTab.Files;
+        UpdatePanelVisibility();
+    }
+
+    private void UpdatePanelVisibility()
+    {
         var filesPanel = this.FindControl<Grid>("FilesPanel");
         var filesHeader = this.FindControl<Border>("FilesHeader");
         var folderPath = this.FindControl<TextBlock>("FolderPathText");
         var searchPanel = this.FindControl<SearchPanel>("SearchPanelView");
+        var methodPanel = this.FindControl<MethodSearchPanel>("MethodSearchPanelView");
 
-        if (filesPanel != null) filesPanel.IsVisible = true;
-        if (filesHeader != null) filesHeader.IsVisible = true;
-        if (folderPath != null && _currentFolderPath != null) folderPath.IsVisible = true;
-        if (searchPanel != null) searchPanel.IsVisible = false;
+        var isFiles = _activeTab == SidePanelTab.Files;
+        var isSearch = _activeTab == SidePanelTab.Search;
+        var isMethods = _activeTab == SidePanelTab.Methods;
+
+        if (filesPanel != null) filesPanel.IsVisible = isFiles;
+        if (filesHeader != null) filesHeader.IsVisible = isFiles;
+        if (folderPath != null) folderPath.IsVisible = isFiles && _currentFolderPath != null;
+        if (searchPanel != null) searchPanel.IsVisible = isSearch;
+        if (methodPanel != null) methodPanel.IsVisible = isMethods;
 
         UpdateTabHighlights();
     }
@@ -81,15 +98,19 @@ public partial class SidePanel : UserControl
     {
         var filesBtn = this.FindControl<Button>("FilesTabButton");
         var searchBtn = this.FindControl<Button>("SearchTabButton");
+        var methodsBtn = this.FindControl<Button>("MethodsTabButton");
 
         if (filesBtn != null)
-            filesBtn.FontWeight = _isSearchTab ? Avalonia.Media.FontWeight.Normal : Avalonia.Media.FontWeight.Bold;
+            filesBtn.FontWeight = _activeTab == SidePanelTab.Files ? Avalonia.Media.FontWeight.Bold : Avalonia.Media.FontWeight.Normal;
         if (searchBtn != null)
-            searchBtn.FontWeight = _isSearchTab ? Avalonia.Media.FontWeight.Bold : Avalonia.Media.FontWeight.Normal;
+            searchBtn.FontWeight = _activeTab == SidePanelTab.Search ? Avalonia.Media.FontWeight.Bold : Avalonia.Media.FontWeight.Normal;
+        if (methodsBtn != null)
+            methodsBtn.FontWeight = _activeTab == SidePanelTab.Methods ? Avalonia.Media.FontWeight.Bold : Avalonia.Media.FontWeight.Normal;
     }
 
     private void OnFilesTabClick(object? sender, RoutedEventArgs e) => ShowFilesTab();
     private void OnSearchTabClick(object? sender, RoutedEventArgs e) => ShowSearchTab();
+    private void OnMethodsTabClick(object? sender, RoutedEventArgs e) => ShowMethodsTab();
 
     private void OnDragOver(object? sender, DragEventArgs e)
     {
@@ -157,6 +178,10 @@ public partial class SidePanel : UserControl
         // Update search panel directory
         var searchPanel = this.FindControl<SearchPanel>("SearchPanelView");
         searchPanel?.SetSearchDirectory(path);
+
+        // Update method search panel directory
+        var methodPanel = this.FindControl<MethodSearchPanel>("MethodSearchPanelView");
+        methodPanel?.SetSearchDirectory(path);
     }
 
     private async void OnTreeDoubleTapped(object? sender, TappedEventArgs e)
