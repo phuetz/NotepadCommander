@@ -20,7 +20,10 @@ using NotepadCommander.Core.Services.AutoComplete;
 using NotepadCommander.Core.Services.Git;
 using NotepadCommander.Core.Services.Search;
 using NotepadCommander.Core.Services.MethodExtractor;
+using NotepadCommander.Core.Services.Terminal;
+using NotepadCommander.UI.Services;
 using NotepadCommander.UI.ViewModels;
+using NotepadCommander.UI.ViewModels.Tools;
 using NotepadCommander.UI.Views;
 
 namespace NotepadCommander.UI;
@@ -40,11 +43,36 @@ public partial class App : Application
         ConfigureServices(services);
         Services = services.BuildServiceProvider();
 
+        // Gestionnaire d'exceptions non gerees
+        var logger = Services.GetRequiredService<ILogger<App>>();
+
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            if (e.ExceptionObject is Exception ex)
+                logger.LogCritical(ex, "Exception non geree (IsTerminating={IsTerminating})", e.IsTerminating);
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            logger.LogError(e.Exception, "Exception de tache non observee");
+            e.SetObserved();
+        };
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new MainWindow
             {
-                DataContext = Services.GetRequiredService<MainWindowViewModel>()
+                DataContext = Services.GetRequiredService<ShellViewModel>()
+            };
+
+            // Apply saved theme after window creation
+            var settings = Services.GetRequiredService<ISettingsService>();
+            if (settings.Settings.Theme == "Dark")
+                RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+
+            desktop.ShutdownRequested += (_, _) =>
+            {
+                (Services as IDisposable)?.Dispose();
             };
         }
 
@@ -56,7 +84,7 @@ public partial class App : Application
         // Logging
         services.AddLogging(builder =>
         {
-            builder.SetMinimumLevel(LogLevel.Debug);
+            builder.SetMinimumLevel(LogLevel.Information);
         });
 
         // Core Services
@@ -82,9 +110,26 @@ public partial class App : Application
         services.AddSingleton<IGitService, GitService>();
         services.AddSingleton<IMultiFileSearchService, MultiFileSearchService>();
         services.AddSingleton<IMethodExtractorService, MethodExtractorService>();
+        services.AddSingleton<ITerminalService, TerminalService>();
 
-        // ViewModels (MainWindowViewModel takes all services via DI constructor)
-        services.AddTransient<MainWindowViewModel>();
+        // UI Services
+        services.AddSingleton<IDialogService, DialogService>();
+        services.AddSingleton<EditorThemeService>();
+
+        // Sub-ViewModels (Singletons - shared state)
+        services.AddSingleton<TabManagerViewModel>();
+        services.AddSingleton<EditorSettingsViewModel>();
+        services.AddSingleton<SessionManagerViewModel>();
+        services.AddSingleton<CommandPaletteViewModel>();
+        services.AddSingleton<ClipboardHistoryViewModel>();
+
+        // Tool panel ViewModels (Singletons)
+        services.AddSingleton<FileExplorerToolViewModel>();
+        services.AddSingleton<SearchToolViewModel>();
+        services.AddSingleton<MethodSearchToolViewModel>();
+
+        // Main ViewModel (Transient - built from singletons)
+        services.AddTransient<ShellViewModel>();
         services.AddTransient<ToolbarViewModel>();
         services.AddTransient<FindReplaceViewModel>();
     }

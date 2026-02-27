@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -6,21 +7,41 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Microsoft.Extensions.DependencyInjection;
 using NotepadCommander.Core.Models;
+using NotepadCommander.Core.Services;
 using NotepadCommander.Core.Services.Search;
+using NotepadCommander.UI.Models;
+using NotepadCommander.UI.Services;
 using NotepadCommander.UI.ViewModels;
 
 namespace NotepadCommander.UI.Views.Components;
 
 public partial class SearchPanel : UserControl
 {
-    private readonly IMultiFileSearchService _searchService;
+    private IMultiFileSearchService? _searchService;
+    private ISearchReplaceService? _replaceService;
+    private IDialogService? _dialogService;
     private CancellationTokenSource? _searchCts;
     private string? _searchRootDirectory;
+    private bool _showReplace;
+    private bool _servicesResolved;
 
     public SearchPanel()
     {
         InitializeComponent();
-        _searchService = App.Services.GetRequiredService<IMultiFileSearchService>();
+        AttachedToVisualTree += OnAttachedToVisualTree;
+    }
+
+    private void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        if (_servicesResolved) return;
+        _servicesResolved = true;
+        try
+        {
+            _searchService = App.Services.GetRequiredService<IMultiFileSearchService>();
+            _replaceService = App.Services.GetRequiredService<ISearchReplaceService>();
+            _dialogService = App.Services.GetService<IDialogService>();
+        }
+        catch { }
     }
 
     public void SetSearchDirectory(string? directory)
@@ -48,13 +69,137 @@ public partial class SearchPanel : UserControl
         ExecuteSearch();
     }
 
+    private void OnToggleReplaceClick(object? sender, RoutedEventArgs e)
+    {
+        _showReplace = !_showReplace;
+        var section = this.FindControl<StackPanel>("ReplaceSection");
+        var button = this.FindControl<Button>("ToggleReplaceButton");
+        if (section != null) section.IsVisible = _showReplace;
+        if (button != null) button.Content = _showReplace ? "\u25B2 Remplacer" : "\u25BC Remplacer";
+    }
+
+    private async void OnReplaceAllClick(object? sender, RoutedEventArgs e)
+    {
+        if (_searchService == null || _replaceService == null) return;
+
+        var patternBox = this.FindControl<TextBox>("SearchPatternBox");
+        var replaceBox = this.FindControl<TextBox>("ReplacePatternBox");
+        var status = this.FindControl<TextBlock>("StatusText");
+
+        var pattern = patternBox?.Text?.Trim();
+        var replacement = replaceBox?.Text ?? string.Empty;
+
+        if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(_searchRootDirectory)) return;
+
+        var caseSensitive = this.FindControl<CheckBox>("CaseSensitiveCheck")?.IsChecked == true;
+        var wholeWord = this.FindControl<CheckBox>("WholeWordCheck")?.IsChecked == true;
+        var useRegex = this.FindControl<CheckBox>("RegexCheck")?.IsChecked == true;
+
+        if (status != null) status.Text = "Analyse en cours...";
+
+        var window = TopLevel.GetTopLevel(this);
+        var vm = window?.DataContext as ShellViewModel;
+
+        try
+        {
+            var options = new MultiFileSearchOptions
+            {
+                CaseSensitive = caseSensitive,
+                WholeWord = wholeWord,
+                UseRegex = useRegex,
+                MaxResults = 10000
+            };
+
+            var cts = new CancellationTokenSource();
+            var fileResults = new List<FileSearchResult>();
+            await foreach (var result in _searchService.SearchInDirectory(_searchRootDirectory, pattern, options, cts.Token))
+            {
+                fileResults.Add(result);
+            }
+
+            var filePaths = fileResults.Select(r => r.FilePath).Distinct().ToList();
+
+            int totalOccurrences = 0;
+            var fileOccurrences = new Dictionary<string, int>();
+
+            foreach (var filePath in filePaths)
+            {
+                var content = await File.ReadAllTextAsync(filePath);
+                var (_, count) = _replaceService.ReplaceAllWithCount(content, pattern, replacement, useRegex, caseSensitive, wholeWord);
+                if (count > 0)
+                {
+                    totalOccurrences += count;
+                    fileOccurrences[filePath] = count;
+                }
+            }
+
+            if (fileOccurrences.Count == 0)
+            {
+                if (status != null) status.Text = "Aucune occurrence trouvee.";
+                return;
+            }
+
+            var confirmed = _dialogService != null
+                && await _dialogService.ShowConfirmDialogAsync(
+                    "Remplacer dans les fichiers",
+                    $"Remplacer '{pattern}' par '{replacement}'\ndans {fileOccurrences.Count} fichier(s) ({totalOccurrences} occurrence(s)) ?");
+
+            if (!confirmed) return;
+
+            if (status != null) status.Text = "Remplacement en cours...";
+
+            int totalReplacements = 0;
+            int filesChanged = 0;
+
+            foreach (var (filePath, _) in fileOccurrences)
+            {
+                var openTab = vm?.TabManager.Tabs.FirstOrDefault(t =>
+                    string.Equals(t.FilePath, filePath, StringComparison.OrdinalIgnoreCase));
+
+                if (openTab != null)
+                {
+                    var (newContent, count) = _replaceService.ReplaceAllWithCount(
+                        openTab.Content, pattern, replacement, useRegex, caseSensitive, wholeWord);
+                    if (count > 0)
+                    {
+                        openTab.Content = newContent;
+                        totalReplacements += count;
+                        filesChanged++;
+                    }
+                }
+                else
+                {
+                    var content = await File.ReadAllTextAsync(filePath);
+                    var (newContent, count) = _replaceService.ReplaceAllWithCount(
+                        content, pattern, replacement, useRegex, caseSensitive, wholeWord);
+                    if (count > 0)
+                    {
+                        await File.WriteAllTextAsync(filePath, newContent);
+                        totalReplacements += count;
+                        filesChanged++;
+                    }
+                }
+            }
+
+            if (status != null)
+                status.Text = $"{totalReplacements} remplacement(s) dans {filesChanged} fichier(s)";
+
+            ExecuteSearch();
+        }
+        catch (Exception ex)
+        {
+            if (status != null) status.Text = $"Erreur: {ex.Message}";
+        }
+    }
+
     private async void ExecuteSearch()
     {
+        if (_searchService == null) return;
+
         var patternBox = this.FindControl<TextBox>("SearchPatternBox");
         var pattern = patternBox?.Text?.Trim();
         if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(_searchRootDirectory)) return;
 
-        // Cancel previous search
         _searchCts?.Cancel();
         _searchCts = new CancellationTokenSource();
         var ct = _searchCts.Token;
@@ -88,7 +233,6 @@ public partial class SearchPanel : UserControl
 
             if (ct.IsCancellationRequested) return;
 
-            // Group by file
             var grouped = results
                 .GroupBy(r => r.FilePath)
                 .Select(g => new SearchFileGroup
@@ -133,7 +277,10 @@ public partial class SearchPanel : UserControl
                     tree.Items.Add(fileItem);
                 }
 
-                status.Text = $"{results.Count} resultat(s) dans {grouped.Count} fichier(s)";
+                if (results.Count == 0)
+                    status.Text = "Aucun resultat trouve.";
+                else
+                    status.Text = $"{results.Count} resultat(s) dans {grouped.Count} fichier(s)";
             });
         }
         catch (OperationCanceledException)
@@ -219,7 +366,6 @@ public partial class SearchPanel : UserControl
         string? filePath = null;
         int line = 1;
 
-        // TreeViewItem.Tag holds the actual data object
         var tag = (selected as TreeViewItem)?.Tag ?? selected;
 
         if (tag is SearchMatchItem match)
@@ -235,31 +381,13 @@ public partial class SearchPanel : UserControl
         if (filePath == null) return;
 
         var window = TopLevel.GetTopLevel(this);
-        if (window?.DataContext is MainWindowViewModel vm)
+        if (window?.DataContext is ShellViewModel vm)
         {
             await vm.OpenFilePath(filePath);
-            if (vm.ActiveTab != null)
+            if (vm.TabManager.ActiveTab != null)
             {
-                vm.ActiveTab.CursorLine = line;
+                vm.TabManager.ActiveTab.CursorLine = line;
             }
         }
     }
-}
-
-public class SearchFileGroup
-{
-    public string FilePath { get; set; } = string.Empty;
-    public string FileName { get; set; } = string.Empty;
-    public string RelativePath { get; set; } = string.Empty;
-    public int MatchCount { get; set; }
-    public ObservableCollection<SearchMatchItem> Matches { get; set; } = new();
-}
-
-public class SearchMatchItem
-{
-    public string FilePath { get; set; } = string.Empty;
-    public int Line { get; set; }
-    public int Column { get; set; }
-    public string LineText { get; set; } = string.Empty;
-    public int MatchLength { get; set; }
 }

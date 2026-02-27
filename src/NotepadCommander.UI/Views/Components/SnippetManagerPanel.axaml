@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="NotepadCommander.UI.Views.Components.SnippetManagerPanel"
+             x:CompileBindings="False">
+
+    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0">
+        <DockPanel>
+            <!-- Header -->
+            <Border DockPanel.Dock="Top" Background="{DynamicResource ToolbarBrush}"
+                    Padding="8,6" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="SNIPPETS" FontWeight="Bold" FontSize="11"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Classes="btn-icon" Width="24" Height="24"
+                            Click="OnCloseClick" ToolTip.Tip="Fermer">
+                        <Viewbox Width="10" Height="10">
+                            <Path Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+                                  Fill="{DynamicResource TextSecondaryBrush}" />
+                        </Viewbox>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Actions -->
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="4"
+                        Margin="8,4" HorizontalAlignment="Right">
+                <Button Classes="btn-toolbar" Content="Ajouter" Click="OnAddClick" Padding="8,4" />
+                <Button Classes="btn-toolbar" Content="Supprimer" Click="OnDeleteClick" Padding="8,4" />
+                <Button Classes="btn-primary" Content="Inserer" Click="OnInsertClick" Padding="8,4" />
+            </StackPanel>
+
+            <!-- Edit fields -->
+            <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="8,4">
+                <TextBox x:Name="SnippetName" Watermark="Nom" />
+                <TextBox x:Name="SnippetTrigger" Watermark="Declencheur" />
+                <TextBox x:Name="SnippetContent" Watermark="Contenu" AcceptsReturn="True"
+                         Height="80" TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- Snippet list -->
+            <ListBox x:Name="SnippetList" Margin="4"
+                     SelectionChanged="OnSnippetSelectionChanged" />
+        </DockPanel>
+    </Border>
+</UserControl>

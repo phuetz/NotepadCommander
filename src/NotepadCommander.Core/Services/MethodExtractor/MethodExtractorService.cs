@@ -60,7 +60,8 @@ public class MethodExtractorService : IMethodExtractorService
 
                 string content;
                 try { content = File.ReadAllText(filePath); }
-                catch { return ValueTask.CompletedTask; }
+                catch (UnauthorizedAccessException) { return ValueTask.CompletedTask; }
+                catch (IOException) { return ValueTask.CompletedTask; }
 
                 var lines = content.Split('\n');
 
@@ -419,11 +420,13 @@ public class MethodExtractorService : IMethodExtractorService
                         stack.Push(subDir);
                 }
             }
-            catch { /* skip inaccessible dirs */ }
+            catch (UnauthorizedAccessException) { /* skip inaccessible dirs */ }
+            catch (IOException) { /* skip inaccessible dirs */ }
 
             string[] files;
             try { files = Directory.GetFiles(dir); }
-            catch { continue; }
+            catch (UnauthorizedAccessException) { continue; }
+            catch (IOException) { continue; }
 
             foreach (var file in files)
             {
@@ -449,10 +452,8 @@ public class MethodExtractorService : IMethodExtractorService
 
             return false;
         }
-        catch
-        {
-            return true;
-        }
+        catch (UnauthorizedAccessException) { return true; }
+        catch (IOException) { return true; }
     }
 
     private static string GetLanguageName(string extension) => extension.ToLowerInvariant() switch

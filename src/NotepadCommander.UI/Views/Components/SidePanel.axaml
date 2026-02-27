@@ -7,10 +7,10 @@
              x:CompileBindings="False"
              Width="250">
 
-    <Border Background="#F8FAFC"
-            BorderBrush="{StaticResource BorderBrush}"
+    <Border Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="0,0,1,0">
-        <Grid RowDefinitions="Auto,Auto,Auto,*">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto">
             <!-- Tab selector: Fichiers / Recherche / Methodes -->
             <Grid ColumnDefinitions="*,*,*" Row="0">
                 <Button Name="FilesTabButton"
@@ -44,24 +44,24 @@
                         Click="OnMethodsTabClick" />
             </Grid>
 
-            <!-- Files panel content -->
+            <!-- Files panel header -->
             <Border Grid.Row="1"
                     Name="FilesHeader"
-                    Background="{StaticResource ToolbarBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{DynamicResource ToolbarBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,0,1"
                     Padding="12,8">
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Text="EXPLORATEUR"
                                FontSize="11"
                                FontWeight="SemiBold"
-                               Foreground="{StaticResource TextMutedBrush}" />
+                               Foreground="{DynamicResource TextMutedBrush}" />
                     <Button Grid.Column="1" Classes="btn-icon"
                             Width="22" Height="22"
                             ToolTip.Tip="Ouvrir un dossier"
                             Name="OpenFolderButton">
                         <TextBlock Text="+" FontSize="14" FontWeight="Bold"
-                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                                   Foreground="{DynamicResource TextSecondaryBrush}" />
                     </Button>
                 </Grid>
             </Border>
@@ -71,13 +71,96 @@
                        Name="FolderPathText"
                        Text=""
                        FontSize="10"
-                       Foreground="{StaticResource TextMutedBrush}"
+                       Foreground="{DynamicResource TextMutedBrush}"
                        Padding="8,4"
                        TextTrimming="CharacterEllipsis"
                        IsVisible="False" />
 
+            <!-- Filter bar -->
+            <Border Grid.Row="3" Name="FilterBar" IsVisible="False"
+                    Padding="6,4"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="0,0,0,1">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBox Name="FilterTextBox"
+                             Watermark="Filtrer les fichiers..."
+                             FontSize="11"
+                             Height="28"
+                             Padding="6,4"
+                             CornerRadius="4" />
+                    <Button Grid.Column="1" Name="ClearFilterButton"
+                            Classes="btn-icon"
+                            Width="22" Height="22"
+                            Margin="4,0,0,0"
+                            ToolTip.Tip="Effacer le filtre"
+                            IsVisible="False"
+                            Click="OnClearFilterClick">
+                        <TextBlock Text="X" FontSize="10" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Toolbar -->
+            <Border Grid.Row="4" Name="FileToolbar" IsVisible="False"
+                    Padding="4,2"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="0,0,0,1">
+                <StackPanel Orientation="Horizontal" Spacing="2">
+                    <Button Classes="btn-icon" Width="26" Height="26"
+                            ToolTip.Tip="Rafraichir"
+                            Click="OnRefreshClick">
+                        <TextBlock Text="&#x21BB;" FontSize="13"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                    </Button>
+                    <Button Classes="btn-icon" Width="26" Height="26"
+                            ToolTip.Tip="Tout replier"
+                            Click="OnCollapseAllClick">
+                        <TextBlock Text="&#x25B2;" FontSize="10"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                    </Button>
+                    <Button Classes="btn-icon" Width="26" Height="26"
+                            ToolTip.Tip="Nouveau fichier"
+                            Click="OnNewFileClick">
+                        <TextBlock Text="&#x1F4C4;" FontSize="11" />
+                    </Button>
+                    <Button Classes="btn-icon" Width="26" Height="26"
+                            ToolTip.Tip="Nouveau dossier"
+                            Click="OnNewFolderClick">
+                        <TextBlock Text="&#x1F4C1;" FontSize="11" />
+                    </Button>
+                </StackPanel>
+            </Border>
+
+            <!-- Extension filter chips -->
+            <Border Grid.Row="5" Name="ExtensionChips" IsVisible="False"
+                    Padding="6,4"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="0,0,0,1">
+                <WrapPanel Orientation="Horizontal">
+                    <Button Name="ChipAll" Classes="btn-toolbar"
+                            Content="Tous" FontSize="10" Padding="6,2" Margin="2"
+                            Click="OnExtensionChipClick" Tag="" />
+                    <Button Name="ChipCs" Classes="btn-toolbar"
+                            Content=".cs" FontSize="10" Padding="6,2" Margin="2"
+                            Click="OnExtensionChipClick" Tag=".cs" />
+                    <Button Name="ChipJs" Classes="btn-toolbar"
+                            Content=".js" FontSize="10" Padding="6,2" Margin="2"
+                            Click="OnExtensionChipClick" Tag=".js" />
+                    <Button Name="ChipJson" Classes="btn-toolbar"
+                            Content=".json" FontSize="10" Padding="6,2" Margin="2"
+                            Click="OnExtensionChipClick" Tag=".json" />
+                    <Button Name="ChipXml" Classes="btn-toolbar"
+                            Content=".xml" FontSize="10" Padding="6,2" Margin="2"
+                            Click="OnExtensionChipClick" Tag=".xml" />
+                    <Button Name="ChipMd" Classes="btn-toolbar"
+                            Content=".md" FontSize="10" Padding="6,2" Margin="2"
+                            Click="OnExtensionChipClick" Tag=".md" />
+                </WrapPanel>
+            </Border>
+
             <!-- File tree (files view) -->
-            <Grid Grid.Row="3" Name="FilesPanel">
+            <Grid Grid.Row="6" Name="FilesPanel">
                 <TreeView Name="FileTree"
                           Padding="4"
                           IsVisible="False">
@@ -86,6 +169,10 @@
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <TextBlock Text="{Binding Icon}" FontSize="12" VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding Name}" FontSize="12" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding FormattedSize}" FontSize="10"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           VerticalAlignment="Center"
+                                           Margin="4,0,0,0" />
                             </StackPanel>
                         </TreeDataTemplate>
                     </TreeView.ItemTemplate>
@@ -97,17 +184,29 @@
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            TextAlignment="Center"
-                           Foreground="{StaticResource TextMutedBrush}"
+                           Foreground="{DynamicResource TextMutedBrush}"
                            FontSize="12" />
             </Grid>
 
+            <!-- File counter -->
+            <Border Grid.Row="7" Name="FileCounter" IsVisible="False"
+                    Background="{DynamicResource ToolbarBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="0,1,0,0"
+                    Padding="8,4">
+                <TextBlock Name="FileCounterText"
+                           Text=""
+                           FontSize="10"
+                           Foreground="{DynamicResource TextMutedBrush}" />
+            </Border>
+
             <!-- Search panel -->
-            <components:SearchPanel Grid.Row="3"
+            <components:SearchPanel Grid.Row="6"
                                      Name="SearchPanelView"
                                      IsVisible="False" />
 
             <!-- Method search panel -->
-            <components:MethodSearchPanel Grid.Row="3"
+            <components:MethodSearchPanel Grid.Row="6"
                                            Name="MethodSearchPanelView"
                                            IsVisible="False" />
         </Grid>

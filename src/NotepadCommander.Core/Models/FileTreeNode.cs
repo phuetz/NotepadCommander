@@ -6,7 +6,26 @@ public class FileTreeNode
     public string FullPath { get; set; } = string.Empty;
     public bool IsDirectory { get; set; }
     public bool IsExpanded { get; set; }
+    public long FileSize { get; set; }
+    public DateTime LastModified { get; set; }
     public List<FileTreeNode> Children { get; set; } = new();
+
+    public string Extension => IsDirectory ? string.Empty : Path.GetExtension(Name).ToLowerInvariant();
+
+    public string FormattedSize
+    {
+        get
+        {
+            if (IsDirectory) return string.Empty;
+            return FileSize switch
+            {
+                < 1024 => $"{FileSize} o",
+                < 1024 * 1024 => $"{FileSize / 1024.0:F1} Ko",
+                < 1024 * 1024 * 1024 => $"{FileSize / (1024.0 * 1024):F1} Mo",
+                _ => $"{FileSize / (1024.0 * 1024 * 1024):F1} Go"
+            };
+        }
+    }
 
     public string Icon => IsDirectory ? (IsExpanded ? "📂" : "📁") : GetFileIcon();
 

@@ -2,48 +2,39 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Threading;
 using Avalonia.VisualTree;
-using AvaloniaEdit;
-using AvaloniaEdit.Folding;
-using AvaloniaEdit.TextMate;
 using Microsoft.Extensions.DependencyInjection;
 using NotepadCommander.Core.Models;
 using NotepadCommander.Core.Services;
 using NotepadCommander.Core.Services.Git;
+using NotepadCommander.Core.Services.TextTransform;
 using NotepadCommander.UI.Controls;
 using NotepadCommander.UI.Services;
 using NotepadCommander.UI.ViewModels;
-using TextMateSharp.Grammars;
 
 namespace NotepadCommander.UI.Views.Components;
 
 public partial class EditorControl : UserControl
 {
-    private TextEditor? _textEditor;
-    private TextMate.Installation? _textMateInstallation;
-    private RegistryOptions? _registryOptions;
+    private NotepadEditor? _editor;
     private bool _isUpdatingFromViewModel;
     private DocumentTabViewModel? _currentViewModel;
-    private MainWindowViewModel? _mainViewModel;
+    private ShellViewModel? _mainViewModel;
     private bool _editorInitialized;
+    private MinimapControl? _minimapControl;
 
-    // Dev features
-    private GitGutterMargin? _gitGutterMargin;
-    private BracketHighlightRenderer? _bracketRenderer;
-    private IndentationGuideRenderer? _indentGuideRenderer;
-    private FoldingManager? _foldingManager;
-    private IGitService? _gitService;
-    private DispatcherTimer? _gitDebounceTimer;
-    private DispatcherTimer? _foldingDebounceTimer;
+    // Event bridge for VM events → editor actions
+    private EditorEventBridge? _eventBridge;
+    private ITextTransformService? _textTransformService;
 
     public EditorControl()
     {
         InitializeComponent();
 
-        _textEditor = this.FindControl<TextEditor>("Editor");
+        _editor = this.FindControl<NotepadEditor>("Editor");
+        _minimapControl = this.FindControl<MinimapControl>("Minimap");
 
-        if (_textEditor != null)
+        if (_editor != null)
             InitializeEditor();
 
         DataContextChanged += OnDataContextChanged;
@@ -51,59 +42,78 @@ public partial class EditorControl : UserControl
 
     private void InitializeEditor()
     {
-        if (_textEditor == null || _editorInitialized) return;
+        if (_editor == null || _editorInitialized) return;
         _editorInitialized = true;
 
-        // TextMate installation is deferred to ApplyViewSettings (when theme info is available)
-        // or to OnLoaded as a fallback
-        _textEditor.TextChanged += OnTextChanged;
-        _textEditor.TextArea.SelectionChanged += OnSelectionChanged;
-        _textEditor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
+        _editor.TextChanged += OnTextChanged;
+        _editor.TextArea.SelectionChanged += OnSelectionChanged;
+        _editor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
 
-        // Ensure a valid font size even if the binding fails
-        if (_textEditor.FontSize <= 0)
-            _textEditor.FontSize = 14;
+        if (_editor.FontSize <= 0)
+            _editor.FontSize = 14;
 
-        // Initialize dev features
-        InitializeDevFeatures();
+        // Resolve services once
+        IGitService? gitService = null;
+        try { gitService = App.Services.GetService<IGitService>(); } catch { }
+        try { _textTransformService = App.Services.GetService<ITextTransformService>(); } catch { }
+
+        // Initialize NotepadEditor (TextMate + dev features)
+        _editor.Initialize(gitService);
+
+        // Event bridge (VM events → NotepadEditor actions)
+        _eventBridge = new EditorEventBridge();
+        _eventBridge.Initialize(
+            _editor,
+            () => _currentViewModel,
+            flag => _isUpdatingFromViewModel = flag,
+            () => _isUpdatingFromViewModel);
+
+        try { InitializeContextMenu(); } catch { }
     }
 
-    private void InitializeDevFeatures()
+    private void InitializeContextMenu()
     {
-        if (_textEditor == null) return;
+        if (_editor == null) return;
 
-        // Git service
-        try { _gitService = App.Services.GetService<IGitService>(); } catch { /* DI not ready */ }
+        var cutItem = new MenuItem { Header = "Couper (Ctrl+X)" };
+        cutItem.Click += (_, _) => _editor?.Cut();
 
-        // Git gutter margin - insert at position 0 (before line numbers)
-        _gitGutterMargin = new GitGutterMargin();
-        _textEditor.TextArea.LeftMargins.Insert(0, _gitGutterMargin);
+        var copyItem = new MenuItem { Header = "Copier (Ctrl+C)" };
+        copyItem.Click += (_, _) => _editor?.Copy();
 
-        // Bracket highlight renderer
-        _bracketRenderer = new BracketHighlightRenderer();
-        _textEditor.TextArea.TextView.BackgroundRenderers.Add(_bracketRenderer);
-
-        // Indentation guide renderer
-        _indentGuideRenderer = new IndentationGuideRenderer();
-        _textEditor.TextArea.TextView.BackgroundRenderers.Add(_indentGuideRenderer);
-
-        // Code folding
-        _foldingManager = FoldingManager.Install(_textEditor.TextArea);
-
-        // Git debounce timer (500ms)
-        _gitDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
-        _gitDebounceTimer.Tick += (_, _) =>
+        var pasteItem = new MenuItem { Header = "Coller (Ctrl+V)" };
+        pasteItem.Click += async (_, _) =>
         {
-            _gitDebounceTimer.Stop();
-            RefreshGitGutter();
+            if (_editor == null) return;
+            var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+            if (clipboard == null) return;
+            var text = await clipboard.GetTextAsync();
+            if (text != null)
+                _editor.TextArea.Selection.ReplaceSelectionWithText(text);
         };
 
-        // Folding debounce timer (1s)
-        _foldingDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000) };
-        _foldingDebounceTimer.Tick += (_, _) =>
+        var selectAllItem = new MenuItem { Header = "Selectionner tout (Ctrl+A)" };
+        selectAllItem.Click += (_, _) => _editor?.SelectAll();
+
+        var commentItem = new MenuItem { Header = "Commenter/Decommenter (Ctrl+/)" };
+        commentItem.Click += (_, _) => _mainViewModel?.ToggleCommentCommand.Execute(null);
+
+        var formatJsonItem = new MenuItem { Header = "Formater JSON" };
+        formatJsonItem.Click += OnContextFormatJson;
+
+        var formatXmlItem = new MenuItem { Header = "Formater XML" };
+        formatXmlItem.Click += OnContextFormatXml;
+
+        _editor.ContextMenu = new ContextMenu
         {
-            _foldingDebounceTimer.Stop();
-            RefreshFoldings();
+            Items =
+            {
+                cutItem, copyItem, pasteItem,
+                new Separator(),
+                selectAllItem,
+                new Separator(),
+                commentItem, formatJsonItem, formatXmlItem
+            }
         };
     }
 
@@ -111,38 +121,28 @@ public partial class EditorControl : UserControl
     {
         base.OnLoaded(e);
 
-        if (_textEditor == null)
+        if (_editor == null)
         {
-            _textEditor = this.FindControl<TextEditor>("Editor")
-                          ?? this.GetVisualDescendants().OfType<TextEditor>().FirstOrDefault();
-
-            if (_textEditor != null)
+            _editor = this.FindControl<NotepadEditor>("Editor")
+                      ?? this.GetVisualDescendants().OfType<NotepadEditor>().FirstOrDefault();
+            if (_editor != null)
                 InitializeEditor();
         }
 
-        // Ensure TextMate is set up if ConnectToMainViewModel hasn't done it yet
-        if (_textEditor != null && _textMateInstallation == null)
-        {
-            _registryOptions = new RegistryOptions(ThemeName.LightPlus);
-            _textMateInstallation = _textEditor.InstallTextMate(_registryOptions);
-        }
-
-        // Load pending content
-        if (_textEditor != null && _currentViewModel != null)
+        if (_editor != null && _currentViewModel != null)
             LoadContent(_currentViewModel);
 
-        // Focus the editor so the cursor is visible and typing works immediately
-        _textEditor?.TextArea.Focus();
+        _editor?.TextArea.Focus();
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
 
-        if (_textEditor == null)
+        if (_editor == null)
         {
-            _textEditor = this.FindControl<TextEditor>("Editor");
-            if (_textEditor != null)
+            _editor = this.FindControl<NotepadEditor>("Editor");
+            if (_editor != null)
                 InitializeEditor();
         }
 
@@ -152,34 +152,32 @@ public partial class EditorControl : UserControl
     private void ConnectToMainViewModel()
     {
         var window = TopLevel.GetTopLevel(this);
-        if (window?.DataContext is MainWindowViewModel mainVm && _mainViewModel != mainVm)
+
+        if (window?.DataContext is ShellViewModel mainVm && _mainViewModel != mainVm)
         {
             if (_mainViewModel != null)
                 DisconnectFromMainViewModel();
 
             _mainViewModel = mainVm;
 
-            _mainViewModel.UndoRequested += OnUndo;
-            _mainViewModel.RedoRequested += OnRedo;
-            _mainViewModel.CutRequested += OnCut;
-            _mainViewModel.CopyRequested += OnCopy;
-            _mainViewModel.PasteRequested += OnPaste;
-            _mainViewModel.SelectionRequested += OnSelectionRequested;
-            _mainViewModel.ToggleCommentRequested += OnToggleComment;
-            _mainViewModel.PropertyChanged += OnMainViewModelPropertyChanged;
+            // Event bridge handles editor action events
+            _eventBridge?.Connect(mainVm);
 
-            _mainViewModel.FindReplaceViewModel.GetCurrentText = () => _textEditor?.Text ?? string.Empty;
-            _mainViewModel.FindReplaceViewModel.GetCurrentOffset = () => _textEditor?.CaretOffset ?? 0;
+            // View settings changes (on sub-VM)
+            _mainViewModel.Settings.PropertyChanged += OnSettingsPropertyChanged;
+
+            _mainViewModel.FindReplaceViewModel.GetCurrentText = () => _editor?.Text ?? string.Empty;
+            _mainViewModel.FindReplaceViewModel.GetCurrentOffset = () => _editor?.CaretOffset ?? 0;
             _mainViewModel.FindReplaceViewModel.NavigateToResult += OnNavigateToResult;
             _mainViewModel.FindReplaceViewModel.ReplaceAllText += OnReplaceAllText;
 
             ApplyViewSettings();
 
-            // Re-apply content after theme setup (InstallTextMate may reset the document)
-            if (_currentViewModel != null && _textEditor != null)
+            // Re-apply content after theme setup
+            if (_currentViewModel != null && _editor != null)
             {
                 _isUpdatingFromViewModel = true;
-                _textEditor.Text = _currentViewModel.Content;
+                _editor.Text = _currentViewModel.Content;
                 _isUpdatingFromViewModel = false;
             }
         }
@@ -188,180 +186,119 @@ public partial class EditorControl : UserControl
     private void DisconnectFromMainViewModel()
     {
         if (_mainViewModel == null) return;
-        _mainViewModel.UndoRequested -= OnUndo;
-        _mainViewModel.RedoRequested -= OnRedo;
-        _mainViewModel.CutRequested -= OnCut;
-        _mainViewModel.CopyRequested -= OnCopy;
-        _mainViewModel.PasteRequested -= OnPaste;
-        _mainViewModel.SelectionRequested -= OnSelectionRequested;
-        _mainViewModel.ToggleCommentRequested -= OnToggleComment;
-        _mainViewModel.PropertyChanged -= OnMainViewModelPropertyChanged;
+
+        _eventBridge?.Disconnect();
+        _mainViewModel.Settings.PropertyChanged -= OnSettingsPropertyChanged;
         _mainViewModel.FindReplaceViewModel.NavigateToResult -= OnNavigateToResult;
         _mainViewModel.FindReplaceViewModel.ReplaceAllText -= OnReplaceAllText;
         _mainViewModel.FindReplaceViewModel.GetCurrentText = null;
         _mainViewModel.FindReplaceViewModel.GetCurrentOffset = null;
     }
 
-    private void OnMainViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(MainWindowViewModel.ShowLineNumbers)
-            or nameof(MainWindowViewModel.WordWrap)
-            or nameof(MainWindowViewModel.CurrentTheme)
-            or nameof(MainWindowViewModel.HighlightCurrentLine)
-            or nameof(MainWindowViewModel.ShowWhitespace))
+        if (e.PropertyName is nameof(EditorSettingsViewModel.ShowLineNumbers)
+            or nameof(EditorSettingsViewModel.WordWrap)
+            or nameof(EditorSettingsViewModel.CurrentTheme)
+            or nameof(EditorSettingsViewModel.HighlightCurrentLine)
+            or nameof(EditorSettingsViewModel.ShowWhitespace))
         {
             ApplyViewSettings();
+        }
+        else if (e.PropertyName == nameof(EditorSettingsViewModel.ShowMinimap))
+        {
+            UpdateMinimapVisibility();
         }
     }
 
     private void ApplyViewSettings()
     {
-        if (_textEditor == null || _mainViewModel == null) return;
-        _textEditor.ShowLineNumbers = _mainViewModel.ShowLineNumbers;
-        _textEditor.WordWrap = _mainViewModel.WordWrap;
+        if (_editor == null || _mainViewModel == null) return;
 
-        var isDark = _mainViewModel.CurrentTheme == "Dark";
-        _textEditor.Background = isDark
-            ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1E1E1E"))
-            : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.White);
-        _textEditor.Foreground = isDark
-            ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#D4D4D4"))
-            : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#333333"));
+        _editor.ShowLineNumbers = _mainViewModel.Settings.ShowLineNumbers;
+        _editor.WordWrap = _mainViewModel.Settings.WordWrap;
 
-        // Current line highlight
-        _textEditor.Options.HighlightCurrentLine = _mainViewModel.HighlightCurrentLine;
-
-        // Show whitespace
-        _textEditor.Options.ShowEndOfLine = _mainViewModel.ShowWhitespace;
-        _textEditor.Options.ShowSpaces = _mainViewModel.ShowWhitespace;
-        _textEditor.Options.ShowTabs = _mainViewModel.ShowWhitespace;
-
-        var themeName = isDark ? ThemeName.DarkPlus : ThemeName.LightPlus;
-        _registryOptions = new RegistryOptions(themeName);
-
-        // Dispose old installation before creating new one
-        _textMateInstallation?.Dispose();
-        _textMateInstallation = _textEditor.InstallTextMate(_registryOptions);
+        // Set via StyledProperties — NotepadEditor handles the rest
+        _editor.HighlightCurrentLine = _mainViewModel.Settings.HighlightCurrentLine;
+        _editor.ShowWhitespace = _mainViewModel.Settings.ShowWhitespace;
+        _editor.IsDarkTheme = _mainViewModel.Settings.CurrentTheme == "Dark";
 
         if (_currentViewModel != null)
-            ApplySyntaxHighlighting(_currentViewModel.Language);
-    }
+            _editor.Language = _currentViewModel.Language;
 
-    private void OnUndo()
-    {
-        if (_textEditor?.Document.UndoStack.CanUndo == true)
-            _textEditor.Document.UndoStack.Undo();
-    }
-
-    private void OnRedo()
-    {
-        if (_textEditor?.Document.UndoStack.CanRedo == true)
-            _textEditor.Document.UndoStack.Redo();
-    }
-
-    private void OnCut() => _textEditor?.Cut();
-    private void OnCopy() => _textEditor?.Copy();
-
-    private async void OnPaste()
-    {
-        if (_textEditor == null) return;
-        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
-        if (clipboard == null) return;
-        var text = await clipboard.GetTextAsync();
-        if (text != null)
-        {
-            _textEditor.TextArea.Selection.ReplaceSelectionWithText(text);
-        }
-    }
-
-    private void OnSelectionRequested(int offset, int length)
-    {
-        if (_textEditor == null) return;
-        _textEditor.Select(offset, length);
-        var loc = _textEditor.Document.GetLocation(offset);
-        _textEditor.ScrollTo(loc.Line, loc.Column);
+        UpdateMinimapVisibility();
     }
 
     private void OnNavigateToResult(SearchResult result)
     {
-        if (_textEditor == null) return;
-        var offset = _textEditor.Document.GetOffset(result.Line, result.Column);
-        _textEditor.Select(offset, result.Length);
-        _textEditor.ScrollTo(result.Line, result.Column);
-        _textEditor.TextArea.Focus();
+        if (_editor == null) return;
+        var offset = _editor.Document.GetOffset(result.Line, result.Column);
+        _editor.Select(offset, result.Length);
+        _editor.ScrollTo(result.Line, result.Column);
+        _editor.TextArea.Focus();
     }
 
     private void OnReplaceAllText(string newText)
     {
-        if (_textEditor == null) return;
+        if (_editor == null) return;
         _isUpdatingFromViewModel = true;
-        _textEditor.Text = newText;
+        _editor.Text = newText;
         _isUpdatingFromViewModel = false;
         if (_currentViewModel != null)
             _currentViewModel.Content = newText;
     }
 
-    private void OnToggleComment(string _)
-    {
-        if (_textEditor == null || _currentViewModel == null || _mainViewModel == null) return;
-
-        var textArea = _textEditor.TextArea;
-        var doc = _textEditor.Document;
-
-        // Determine affected lines
-        int startLine, endLine;
-        if (textArea.Selection.IsEmpty)
-        {
-            startLine = endLine = textArea.Caret.Line;
-        }
-        else
-        {
-            var selStart = textArea.Selection.SurroundingSegment;
-            if (selStart == null) return;
-            startLine = doc.GetLineByOffset(selStart.Offset).LineNumber;
-            endLine = doc.GetLineByOffset(selStart.EndOffset).LineNumber;
-        }
-
-        // Get text of affected lines
-        var firstDocLine = doc.GetLineByNumber(startLine);
-        var lastDocLine = doc.GetLineByNumber(endLine);
-        var offset = firstDocLine.Offset;
-        var length = lastDocLine.EndOffset - firstDocLine.Offset;
-        var linesText = doc.GetText(offset, length);
-
-        // Toggle comment
-        var commented = _mainViewModel.CommentService.ToggleComment(linesText, _currentViewModel.Language);
-
-        // Replace in document
-        _isUpdatingFromViewModel = true;
-        doc.Replace(offset, length, commented);
-        _isUpdatingFromViewModel = false;
-
-        _currentViewModel.Content = _textEditor.Text ?? string.Empty;
-    }
-
     private void OnSelectionChanged(object? sender, EventArgs e)
     {
-        if (_textEditor == null || _mainViewModel == null) return;
-        var selection = _textEditor.TextArea.Selection;
-        _mainViewModel.SelectedText = selection.IsEmpty ? null : _textEditor.SelectedText;
+        if (_editor == null || _mainViewModel == null) return;
+        var selection = _editor.TextArea.Selection;
+        _mainViewModel.SelectedText = selection.IsEmpty ? null : _editor.SelectedText;
+        _editor.UpdateOccurrenceHighlights(selection.IsEmpty ? null : _editor.SelectedText);
+    }
+
+    private void OnTextChanged(object? sender, EventArgs e)
+    {
+        if (_isUpdatingFromViewModel || _currentViewModel == null || _editor == null) return;
+
+        _isUpdatingFromViewModel = true;
+        _currentViewModel.Content = _editor.Text ?? string.Empty;
+        _isUpdatingFromViewModel = false;
+
+        _editor.ScheduleRefresh();
+    }
+
+    private void OnCaretPositionChanged(object? sender, EventArgs e)
+    {
+        if (_currentViewModel == null || _editor == null) return;
+
+        var caret = _editor.TextArea.Caret;
+        _currentViewModel.CursorLine = caret.Line;
+        _currentViewModel.CursorColumn = caret.Column;
+
+        var selection = _editor.TextArea.Selection;
+        _currentViewModel.SelectionLength = selection.IsEmpty ? 0 : selection.Length;
+
+        _editor.UpdateBracketHighlight(_editor.CaretOffset);
     }
 
     private void LoadContent(DocumentTabViewModel viewModel)
     {
-        if (_textEditor == null) return;
+        if (_editor == null) return;
 
-        _isUpdatingFromViewModel = true;
-        _textEditor.Text = viewModel.Content;
-        _isUpdatingFromViewModel = false;
-
-        ApplySyntaxHighlighting(viewModel.Language);
-        viewModel.PropertyChanged -= OnViewModelPropertyChanged; // prevent double subscribe
+        viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
 
+        // Grammar-first pattern: apply syntax highlighting before setting content
+        _editor.Language = viewModel.Language;
+
+        _isUpdatingFromViewModel = true;
+        _editor.Text = viewModel.Content ?? string.Empty;
+        _isUpdatingFromViewModel = false;
+
         // Refresh dev features for the new content
-        RefreshGitGutter();
-        RefreshFoldings();
+        _editor.SetFileContext(viewModel.FilePath, viewModel.Language);
+        _editor.RefreshGitGutter(viewModel.FilePath);
+        _editor.RefreshFoldings(viewModel.FilePath, viewModel.Language);
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
@@ -371,155 +308,81 @@ public partial class EditorControl : UserControl
 
         _currentViewModel = DataContext as DocumentTabViewModel;
 
-        if (_currentViewModel != null && _textEditor != null)
-        {
+        if (_currentViewModel != null && _editor != null)
             LoadContent(_currentViewModel);
-            _textEditor.TextArea.Focus();
-        }
+        else if (DataContext == null && _editor != null)
+            _editor.Text = string.Empty;
     }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(DocumentTabViewModel.Language) && _currentViewModel != null)
         {
-            ApplySyntaxHighlighting(_currentViewModel.Language);
-            RefreshFoldings();
+            _editor?.ApplyGrammar(_currentViewModel.Language);
+            _editor?.RefreshFoldings(_currentViewModel.FilePath, _currentViewModel.Language);
         }
-        else if (e.PropertyName == nameof(DocumentTabViewModel.Content) && _currentViewModel != null && _textEditor != null)
+        else if (e.PropertyName == nameof(DocumentTabViewModel.Content) && _currentViewModel != null && _editor != null)
         {
-            if (!_isUpdatingFromViewModel && _textEditor.Text != _currentViewModel.Content)
+            if (!_isUpdatingFromViewModel && _editor.Text != _currentViewModel.Content)
             {
                 _isUpdatingFromViewModel = true;
-                _textEditor.Text = _currentViewModel.Content;
+                _editor.Text = _currentViewModel.Content;
                 _isUpdatingFromViewModel = false;
             }
         }
-        else if (e.PropertyName == nameof(DocumentTabViewModel.CursorLine) && _currentViewModel != null && _textEditor != null)
+        else if (e.PropertyName == nameof(DocumentTabViewModel.CursorLine) && _currentViewModel != null && _editor != null)
         {
-            var caret = _textEditor.TextArea.Caret;
+            var caret = _editor.TextArea.Caret;
             if (caret.Line != _currentViewModel.CursorLine)
             {
                 caret.Line = _currentViewModel.CursorLine;
                 caret.Column = 1;
-                _textEditor.ScrollTo(caret.Line, caret.Column);
+                _editor.ScrollTo(caret.Line, caret.Column);
             }
         }
     }
 
-    private void OnTextChanged(object? sender, EventArgs e)
+    private void UpdateMinimapVisibility()
     {
-        if (_isUpdatingFromViewModel || _currentViewModel == null || _textEditor == null) return;
+        if (_minimapControl == null || _mainViewModel == null || _editor == null) return;
 
-        _isUpdatingFromViewModel = true;
-        _currentViewModel.Content = _textEditor.Text ?? string.Empty;
-        _isUpdatingFromViewModel = false;
-
-        // Debounce git gutter refresh
-        _gitDebounceTimer?.Stop();
-        _gitDebounceTimer?.Start();
-
-        // Debounce folding refresh
-        _foldingDebounceTimer?.Stop();
-        _foldingDebounceTimer?.Start();
-    }
-
-    private void OnCaretPositionChanged(object? sender, EventArgs e)
-    {
-        if (_currentViewModel == null || _textEditor == null) return;
-
-        var caret = _textEditor.TextArea.Caret;
-        _currentViewModel.CursorLine = caret.Line;
-        _currentViewModel.CursorColumn = caret.Column;
-
-        var selection = _textEditor.TextArea.Selection;
-        _currentViewModel.SelectionLength = selection.IsEmpty ? 0 : selection.Length;
-
-        // Update bracket matching
-        UpdateBracketHighlight();
-    }
-
-    private void UpdateBracketHighlight()
-    {
-        if (_bracketRenderer == null || _textEditor == null) return;
-
-        var (open, close) = BracketHighlightRenderer.FindMatchingBracket(
-            _textEditor.Document, _textEditor.CaretOffset);
-
-        if (open >= 0 && close >= 0)
-            _bracketRenderer.SetHighlight(open, close);
+        if (_mainViewModel.Settings.ShowMinimap)
+        {
+            _minimapControl.IsVisible = true;
+            _minimapControl.AttachEditor(_editor);
+        }
         else
-            _bracketRenderer.ClearHighlight();
-
-        _textEditor.TextArea.TextView.InvalidateLayer(AvaloniaEdit.Rendering.KnownLayer.Selection);
+        {
+            _minimapControl.IsVisible = false;
+            _minimapControl.DetachEditor();
+        }
     }
 
-    private void RefreshGitGutter()
+    private void OnContextFormatJson(object? sender, RoutedEventArgs e)
     {
-        if (_gitGutterMargin == null || _gitService == null || _currentViewModel?.FilePath == null) return;
-
+        if (_editor == null || _currentViewModel == null || _textTransformService == null) return;
         try
         {
-            if (_gitService.IsInGitRepository(_currentViewModel.FilePath))
-            {
-                var changes = _gitService.GetModifiedLines(_currentViewModel.FilePath);
-                _gitGutterMargin.UpdateChanges(changes);
-            }
-            else
-            {
-                _gitGutterMargin.UpdateChanges(Array.Empty<GitLineChange>());
-            }
+            var formatted = _textTransformService.FormatJson(_editor.Text ?? string.Empty);
+            _isUpdatingFromViewModel = true;
+            _editor.Text = formatted;
+            _isUpdatingFromViewModel = false;
+            _currentViewModel.Content = formatted;
         }
-        catch
-        {
-            _gitGutterMargin.UpdateChanges(Array.Empty<GitLineChange>());
-        }
+        catch { /* invalid JSON */ }
     }
 
-    private void RefreshFoldings()
+    private void OnContextFormatXml(object? sender, RoutedEventArgs e)
     {
-        if (_foldingManager == null || _textEditor == null || _currentViewModel == null) return;
-
+        if (_editor == null || _currentViewModel == null || _textTransformService == null) return;
         try
         {
-            CodeFoldingService.UpdateFoldings(_foldingManager, _textEditor.Document, _currentViewModel.Language);
+            var formatted = _textTransformService.FormatXml(_editor.Text ?? string.Empty);
+            _isUpdatingFromViewModel = true;
+            _editor.Text = formatted;
+            _isUpdatingFromViewModel = false;
+            _currentViewModel.Content = formatted;
         }
-        catch
-        {
-            // Silently ignore folding errors
-        }
+        catch { /* invalid XML */ }
     }
-
-    private void ApplySyntaxHighlighting(SupportedLanguage language)
-    {
-        if (_textMateInstallation == null || _registryOptions == null) return;
-
-        var scopeName = GetScopeName(language);
-        if (scopeName != null)
-            _textMateInstallation.SetGrammar(scopeName);
-    }
-
-    private string? GetScopeName(SupportedLanguage language) => language switch
-    {
-        SupportedLanguage.CSharp => _registryOptions?.GetScopeByLanguageId("csharp"),
-        SupportedLanguage.JavaScript => _registryOptions?.GetScopeByLanguageId("javascript"),
-        SupportedLanguage.TypeScript => _registryOptions?.GetScopeByLanguageId("typescript"),
-        SupportedLanguage.Python => _registryOptions?.GetScopeByLanguageId("python"),
-        SupportedLanguage.Java => _registryOptions?.GetScopeByLanguageId("java"),
-        SupportedLanguage.Cpp => _registryOptions?.GetScopeByLanguageId("cpp"),
-        SupportedLanguage.C => _registryOptions?.GetScopeByLanguageId("c"),
-        SupportedLanguage.Html => _registryOptions?.GetScopeByLanguageId("html"),
-        SupportedLanguage.Css => _registryOptions?.GetScopeByLanguageId("css"),
-        SupportedLanguage.Xml => _registryOptions?.GetScopeByLanguageId("xml"),
-        SupportedLanguage.Json => _registryOptions?.GetScopeByLanguageId("json"),
-        SupportedLanguage.Yaml => _registryOptions?.GetScopeByLanguageId("yaml"),
-        SupportedLanguage.Markdown => _registryOptions?.GetScopeByLanguageId("markdown"),
-        SupportedLanguage.Sql => _registryOptions?.GetScopeByLanguageId("sql"),
-        SupportedLanguage.PowerShell => _registryOptions?.GetScopeByLanguageId("powershell"),
-        SupportedLanguage.Bash => _registryOptions?.GetScopeByLanguageId("shellscript"),
-        SupportedLanguage.Ruby => _registryOptions?.GetScopeByLanguageId("ruby"),
-        SupportedLanguage.Go => _registryOptions?.GetScopeByLanguageId("go"),
-        SupportedLanguage.Rust => _registryOptions?.GetScopeByLanguageId("rust"),
-        SupportedLanguage.Php => _registryOptions?.GetScopeByLanguageId("php"),
-        _ => null
-    };
 }

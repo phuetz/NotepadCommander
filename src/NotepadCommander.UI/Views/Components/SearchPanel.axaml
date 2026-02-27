@@ -3,7 +3,7 @@
              x:Class="NotepadCommander.UI.Views.Components.SearchPanel"
              x:CompileBindings="False">
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto">
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
         <!-- Search input -->
         <Grid ColumnDefinitions="*,Auto" Margin="4">
             <TextBox Name="SearchPatternBox"
@@ -34,11 +34,34 @@
             <CheckBox Name="RegexCheck"
                       Content=".*"
                       ToolTip.Tip="Expression reguliere"
-                      FontSize="10" />
+                      FontSize="10"
+                      Margin="0,0,4,0" />
+            <Button Name="ToggleReplaceButton"
+                    Content="&#x25BC; Remplacer"
+                    FontSize="10"
+                    Height="22"
+                    Padding="6,2"
+                    ToolTip.Tip="Afficher/masquer le remplacement dans les fichiers"
+                    Click="OnToggleReplaceClick" />
         </WrapPanel>
 
+        <!-- Replace section (hidden by default) -->
+        <StackPanel Grid.Row="2" Name="ReplaceSection" IsVisible="False" Margin="4,0,4,4">
+            <TextBox Name="ReplacePatternBox"
+                     Watermark="Remplacer par..."
+                     FontSize="12"
+                     Margin="0,0,0,4" />
+            <Button Name="ReplaceAllButton"
+                    Content="Tout remplacer dans les fichiers"
+                    FontSize="11"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="28"
+                    Click="OnReplaceAllClick" />
+        </StackPanel>
+
         <!-- Results tree -->
-        <TreeView Grid.Row="2"
+        <TreeView Grid.Row="3"
                   Name="ResultsTree"
                   FontSize="11"
                   Padding="2"
@@ -51,11 +74,11 @@
         </TreeView>
 
         <!-- Status -->
-        <TextBlock Grid.Row="3"
+        <TextBlock Grid.Row="4"
                    Name="StatusText"
                    Text=""
                    FontSize="10"
-                   Foreground="{StaticResource TextMutedBrush}"
+                   Foreground="{DynamicResource TextMutedBrush}"
                    Padding="6,4"
                    TextTrimming="CharacterEllipsis" />
     </Grid>

@@ -9,10 +9,14 @@ public partial class SettingsDialog : Window
 {
     private readonly ISettingsService _settingsService;
 
-    public SettingsDialog()
+    public SettingsDialog() : this(App.Services.GetRequiredService<ISettingsService>())
+    {
+    }
+
+    public SettingsDialog(ISettingsService settingsService)
     {
         InitializeComponent();
-        _settingsService = App.Services.GetRequiredService<ISettingsService>();
+        _settingsService = settingsService;
     }
 
     protected override void OnLoaded(RoutedEventArgs e)
@@ -78,15 +82,14 @@ public partial class SettingsDialog : Window
 
         _settingsService.Save();
 
-        // Apply settings to MainWindowViewModel if available
-        if (Owner is Window { DataContext: ViewModels.MainWindowViewModel mainVm })
+        if (Owner is Window { DataContext: ViewModels.ShellViewModel shellVm })
         {
-            mainVm.ShowLineNumbers = s.ShowLineNumbers;
-            mainVm.WordWrap = s.WordWrap;
-            mainVm.HighlightCurrentLine = s.HighlightCurrentLine;
-            mainVm.ShowWhitespace = s.ShowWhitespace;
-            if (s.Theme == "Dark") mainVm.SetThemeDarkCommand.Execute(null);
-            else mainVm.SetThemeLightCommand.Execute(null);
+            shellVm.Settings.ShowLineNumbers = s.ShowLineNumbers;
+            shellVm.Settings.WordWrap = s.WordWrap;
+            shellVm.Settings.HighlightCurrentLine = s.HighlightCurrentLine;
+            shellVm.Settings.ShowWhitespace = s.ShowWhitespace;
+            if (s.Theme == "Dark") shellVm.SetThemeDarkCommand.Execute(null);
+            else shellVm.SetThemeLightCommand.Execute(null);
         }
     }
 }

@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.DependencyInjection;
 using NotepadCommander.Core.Services.Compare;
 using NotepadCommander.Core.Services.Macro;
 using NotepadCommander.Core.Services.Snippets;
@@ -12,7 +11,7 @@ namespace NotepadCommander.UI.ViewModels;
 
 public partial class ToolsToolbarViewModel : ViewModelBase
 {
-    private readonly MainWindowViewModel _mainVm;
+    private readonly ShellViewModel _mainVm;
     private readonly ICompareService _compareService;
     private readonly IMacroService _macroService;
     private readonly ISnippetService _snippetService;
@@ -25,14 +24,20 @@ public partial class ToolsToolbarViewModel : ViewModelBase
     [ObservableProperty]
     private bool isMarkdownPreviewVisible;
 
-    public ToolsToolbarViewModel(MainWindowViewModel mainVm)
+    public ToolsToolbarViewModel(
+        ShellViewModel mainVm,
+        ICompareService compareService,
+        IMacroService macroService,
+        ISnippetService snippetService,
+        IMarkdownService markdownService,
+        ICalculatorService calculatorService)
     {
         _mainVm = mainVm;
-        _compareService = App.Services.GetRequiredService<ICompareService>();
-        _macroService = App.Services.GetRequiredService<IMacroService>();
-        _snippetService = App.Services.GetRequiredService<ISnippetService>();
-        _markdownService = App.Services.GetRequiredService<IMarkdownService>();
-        _calculatorService = App.Services.GetRequiredService<ICalculatorService>();
+        _compareService = compareService;
+        _macroService = macroService;
+        _snippetService = snippetService;
+        _markdownService = markdownService;
+        _calculatorService = calculatorService;
     }
 
     public string RecordingIcon => _macroService.IsRecording ? "⏹" : "⏺";
@@ -42,7 +47,7 @@ public partial class ToolsToolbarViewModel : ViewModelBase
     private void CompareFiles()
     {
         // Comparison requires two files - for now uses first two open tabs
-        var tabs = _mainVm.Tabs;
+        var tabs = _mainVm.TabManager.Tabs;
         if (tabs.Count < 2) return;
 
         var oldText = tabs[0].Content ?? string.Empty;
@@ -70,15 +75,15 @@ public partial class ToolsToolbarViewModel : ViewModelBase
     private void PlayMacro()
     {
         var macro = _macroService.GetLastRecording();
-        if (macro == null || _mainVm.ActiveTab == null) return;
+        if (macro == null || _mainVm.TabManager.ActiveTab == null) return;
 
         foreach (var step in macro.Steps)
         {
             if (step.Action == MacroAction.InsertText && step.Value != null)
             {
-                var content = _mainVm.ActiveTab.Content ?? string.Empty;
+                var content = _mainVm.TabManager.ActiveTab.Content ?? string.Empty;
                 var pos = Math.Min(step.Position, content.Length);
-                _mainVm.ActiveTab.Content = content.Insert(pos, step.Value);
+                _mainVm.TabManager.ActiveTab.Content = content.Insert(pos, step.Value);
             }
         }
     }
@@ -106,7 +111,7 @@ public partial class ToolsToolbarViewModel : ViewModelBase
     [RelayCommand]
     private void CalculateSelection()
     {
-        var tab = _mainVm.ActiveTab;
+        var tab = _mainVm.TabManager.ActiveTab;
         if (tab == null) return;
 
         var selectedText = _mainVm.SelectedText;

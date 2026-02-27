@@ -1,6 +1,6 @@
 namespace NotepadCommander.Core.Services.AutoSave;
 
-public interface IAutoSaveService
+public interface IAutoSaveService : IDisposable
 {
     bool IsEnabled { get; set; }
     int IntervalSeconds { get; set; }

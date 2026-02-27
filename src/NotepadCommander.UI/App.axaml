@@ -1,7 +1,76 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:svc="using:NotepadCommander.UI.Services"
              x:Class="NotepadCommander.UI.App"
              RequestedThemeVariant="Light">
+
+    <Application.DataTemplates>
+        <svc:ViewLocator />
+    </Application.DataTemplates>
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- Theme-invariant resources (primary/accent colors) -->
+            <SolidColorBrush x:Key="PrimaryBrush" Color="#4CAF50" />
+            <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#43A047" />
+            <SolidColorBrush x:Key="DangerBrush" Color="#F44336" />
+            <SolidColorBrush x:Key="SelectionBrush" Color="#2196F3" />
+
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="PrimaryLightBrush" Color="#E8F5E9" />
+                    <SolidColorBrush x:Key="DangerHoverBrush" Color="#FFEBEE" />
+                    <SolidColorBrush x:Key="SelectionBackgroundBrush" Color="#E8F5E9" />
+                    <SolidColorBrush x:Key="BackgroundBrush" Color="#F5F5F5" />
+                    <SolidColorBrush x:Key="ToolbarBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="SurfaceBrush" Color="#FAFAFA" />
+                    <SolidColorBrush x:Key="BorderBrush" Color="#E0E0E0" />
+                    <SolidColorBrush x:Key="BorderLightBrush" Color="#EEEEEE" />
+                    <SolidColorBrush x:Key="HoverBrush" Color="#F5F5F5" />
+                    <SolidColorBrush x:Key="TextBrush" Color="#333333" />
+                    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#333333" />
+                    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#666666" />
+                    <SolidColorBrush x:Key="TextMutedBrush" Color="#999999" />
+                    <SolidColorBrush x:Key="RibbonTopRowBrush" Color="#F6F8FB" />
+                    <SolidColorBrush x:Key="RibbonTabRowBrush" Color="#FAFCFF" />
+                    <SolidColorBrush x:Key="RibbonGroupBrush" Color="#FCFDFE" />
+                    <SolidColorBrush x:Key="TabBarBrush" Color="#F0F0F0" />
+                    <SolidColorBrush x:Key="StatusBarBrush" Color="#F5F7FA" />
+                    <SolidColorBrush x:Key="BackstagePanelBrush" Color="#F8FAFD" />
+                    <SolidColorBrush x:Key="BackstageCardBrush" Color="White" />
+                    <SolidColorBrush x:Key="StatusSeparatorBrush" Color="#D7E1ED" />
+                    <SolidColorBrush x:Key="StatusPillBrush" Color="White" />
+                    <SolidColorBrush x:Key="StatusPillBorderBrush" Color="#CBD8EA" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="PrimaryLightBrush" Color="#1B3A1D" />
+                    <SolidColorBrush x:Key="DangerHoverBrush" Color="#3E1515" />
+                    <SolidColorBrush x:Key="SelectionBackgroundBrush" Color="#1B3A1D" />
+                    <SolidColorBrush x:Key="BackgroundBrush" Color="#1E1E1E" />
+                    <SolidColorBrush x:Key="ToolbarBrush" Color="#252526" />
+                    <SolidColorBrush x:Key="SurfaceBrush" Color="#2D2D2D" />
+                    <SolidColorBrush x:Key="BorderBrush" Color="#3E3E42" />
+                    <SolidColorBrush x:Key="BorderLightBrush" Color="#333337" />
+                    <SolidColorBrush x:Key="HoverBrush" Color="#2A2D2E" />
+                    <SolidColorBrush x:Key="TextBrush" Color="#CCCCCC" />
+                    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#CCCCCC" />
+                    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#9E9E9E" />
+                    <SolidColorBrush x:Key="TextMutedBrush" Color="#6E6E6E" />
+                    <SolidColorBrush x:Key="RibbonTopRowBrush" Color="#2D2D2D" />
+                    <SolidColorBrush x:Key="RibbonTabRowBrush" Color="#252526" />
+                    <SolidColorBrush x:Key="RibbonGroupBrush" Color="#2D2D2D" />
+                    <SolidColorBrush x:Key="TabBarBrush" Color="#2D2D2D" />
+                    <SolidColorBrush x:Key="StatusBarBrush" Color="#252526" />
+                    <SolidColorBrush x:Key="BackstagePanelBrush" Color="#252526" />
+                    <SolidColorBrush x:Key="BackstageCardBrush" Color="#2D2D2D" />
+                    <SolidColorBrush x:Key="StatusSeparatorBrush" Color="#3E3E42" />
+                    <SolidColorBrush x:Key="StatusPillBrush" Color="#333337" />
+                    <SolidColorBrush x:Key="StatusPillBorderBrush" Color="#3E3E42" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />

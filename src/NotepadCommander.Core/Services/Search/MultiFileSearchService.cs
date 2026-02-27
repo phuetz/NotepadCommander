@@ -110,7 +110,8 @@ public class MultiFileSearchService : IMultiFileSearchService
                         stack.Push(subDir);
                 }
             }
-            catch { /* skip inaccessible dirs */ }
+            catch (UnauthorizedAccessException) { /* skip inaccessible dirs */ }
+            catch (IOException) { /* skip inaccessible dirs */ }
 
             // Yield files
             string[] files;
@@ -118,10 +119,8 @@ public class MultiFileSearchService : IMultiFileSearchService
             {
                 files = Directory.GetFiles(dir);
             }
-            catch
-            {
-                continue;
-            }
+            catch (UnauthorizedAccessException) { continue; }
+            catch (IOException) { continue; }
 
             foreach (var file in files)
             {
@@ -161,10 +160,8 @@ public class MultiFileSearchService : IMultiFileSearchService
 
             return false;
         }
-        catch
-        {
-            return true;
-        }
+        catch (UnauthorizedAccessException) { return true; }
+        catch (IOException) { return true; }
     }
 
     private static Regex BuildRegex(string pattern, bool useRegex, bool caseSensitive, bool wholeWord)

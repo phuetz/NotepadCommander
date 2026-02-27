@@ -1,10 +1,11 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:NotepadCommander.UI.ViewModels"
+             xmlns:components="using:NotepadCommander.UI.Views.Components"
              xmlns:converters="using:NotepadCommander.UI.Converters"
              x:Class="NotepadCommander.UI.Views.Components.ToolbarTabControl"
              x:DataType="vm:ToolbarViewModel"
-             Background="{StaticResource ToolbarBrush}">
+             Background="{DynamicResource ToolbarBrush}">
 
     <UserControl.Resources>
         <converters:PathToFileNameConverter x:Key="PathToFileNameConverter" />
@@ -14,8 +15,8 @@
         <!-- Ligne d'acces rapide -->
         <Border Grid.Row="0"
                 Classes="ribbon-top-row"
-                Background="#F7F8FA"
-                BorderBrush="{StaticResource BorderBrush}"
+                Background="{DynamicResource RibbonTopRowBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="10,4">
             <Grid ColumnDefinitions="Auto,*,Auto">
@@ -35,7 +36,7 @@
                             ToolTip.Tip="Nouveau (Ctrl+N)">
                         <Viewbox Width="14" Height="14">
                             <Path Data="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"
-                                  Fill="{StaticResource TextSecondaryBrush}" />
+                                  Fill="{DynamicResource TextSecondaryBrush}" />
                         </Viewbox>
                     </Button>
 
@@ -45,7 +46,7 @@
                             ToolTip.Tip="Ouvrir (Ctrl+O)">
                         <Viewbox Width="14" Height="14">
                             <Path Data="M19,20H4C2.89,20 2,19.1 2,18V6C2,4.89 2.89,4 4,4H10L12,6H19A2,2 0 0,1 21,8H21L4,8V18L6.14,10H23.21L20.93,18.5C20.7,19.37 19.92,20 19,20Z"
-                                  Fill="{StaticResource TextSecondaryBrush}" />
+                                  Fill="{DynamicResource TextSecondaryBrush}" />
                         </Viewbox>
                     </Button>
 
@@ -55,7 +56,7 @@
                             ToolTip.Tip="Enregistrer (Ctrl+S)">
                         <Viewbox Width="14" Height="14">
                             <Path Data="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"
-                                  Fill="{StaticResource TextSecondaryBrush}" />
+                                  Fill="{DynamicResource TextSecondaryBrush}" />
                         </Viewbox>
                     </Button>
 
@@ -66,7 +67,7 @@
                             ToolTip.Tip="Annuler (Ctrl+Z)">
                         <Viewbox Width="14" Height="14">
                             <Path Data="M12,5V1L7,6L12,11V7A6,6 0 0,1 18,13A6,6 0 0,1 12,19A6,6 0 0,1 6,13H4A8,8 0 0,0 12,21A8,8 0 0,0 20,13A8,8 0 0,0 12,5Z"
-                                  Fill="{StaticResource TextSecondaryBrush}" />
+                                  Fill="{DynamicResource TextSecondaryBrush}" />
                         </Viewbox>
                     </Button>
 
@@ -75,7 +76,7 @@
                             ToolTip.Tip="Refaire (Ctrl+Y)">
                         <Viewbox Width="14" Height="14">
                             <Path Data="M12,5V1L17,6L12,11V7A6,6 0 0,0 6,13A6,6 0 0,0 12,19A6,6 0 0,0 18,13H20A8,8 0 0,1 12,21A8,8 0 0,1 4,13A8,8 0 0,1 12,5Z"
-                                  Fill="{StaticResource TextSecondaryBrush}" />
+                                  Fill="{DynamicResource TextSecondaryBrush}" />
                         </Viewbox>
                     </Button>
                 </StackPanel>
@@ -85,7 +86,7 @@
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"
                            FontWeight="SemiBold"
-                           Foreground="{StaticResource TextSecondaryBrush}" />
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
 
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
@@ -93,7 +94,7 @@
                             Spacing="8">
                     <TextBlock Text="Ctrl+1..5"
                                VerticalAlignment="Center"
-                               Foreground="{StaticResource TextMutedBrush}"
+                               Foreground="{DynamicResource TextMutedBrush}"
                                FontSize="11" />
                 </StackPanel>
             </Grid>
@@ -102,8 +103,8 @@
         <!-- Ligne des onglets -->
         <Border Grid.Row="1"
                 Classes="ribbon-tab-row"
-                Background="{StaticResource ToolbarBrush}"
-                BorderBrush="{StaticResource BorderBrush}"
+                Background="{DynamicResource ToolbarBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="8,0">
             <StackPanel Orientation="Horizontal" Spacing="2">
@@ -144,16 +145,27 @@
             </StackPanel>
         </Border>
 
-        <!-- Contenu dynamique du ruban -->
+        <!-- Contenu dynamique du ruban — visibility-driven (no View creation in VM) -->
         <Border Grid.Row="2"
-                Background="{StaticResource ToolbarBrush}"
-                BorderBrush="{StaticResource BorderBrush}"
+                Background="{DynamicResource ToolbarBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="12,8"
                 MinHeight="58">
             <ScrollViewer HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Disabled">
-                <ContentPresenter Content="{Binding ToolbarContent}" />
+                <Panel>
+                    <components:HomeToolbar IsVisible="{Binding IsHomeTabActive}"
+                                            DataContext="{Binding $parent[Window].DataContext}" />
+                    <components:EditToolbar IsVisible="{Binding IsEditTabActive}"
+                                            DataContext="{Binding $parent[Window].DataContext}" />
+                    <components:ViewToolbar IsVisible="{Binding IsViewTabActive}"
+                                            DataContext="{Binding $parent[Window].DataContext}" />
+                    <components:ToolsToolbar IsVisible="{Binding IsToolsTabActive}"
+                                             DataContext="{Binding $parent[Window].DataContext}" />
+                    <components:HelpToolbar IsVisible="{Binding IsHelpTabActive}"
+                                            DataContext="{Binding $parent[Window].DataContext}" />
+                </Panel>
             </ScrollViewer>
         </Border>
 
@@ -171,7 +183,7 @@
                     Margin="6,6,0,0">
                 <Grid ColumnDefinitions="200,*">
                     <Border Grid.Column="0"
-                            Background="{StaticResource PrimaryBrush}">
+                            Background="{DynamicResource PrimaryBrush}">
                         <Grid RowDefinitions="Auto,*,Auto">
                             <StackPanel Margin="14,12">
                                 <TextBlock Text="Fichier"
@@ -179,7 +191,7 @@
                                            FontSize="24"
                                            FontWeight="SemiBold" />
                                 <TextBlock Text="Backstage"
-                                           Foreground="#EAF3FF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            FontSize="12" />
                             </StackPanel>
 
@@ -218,7 +230,7 @@
                     </Border>
 
                     <Border Grid.Column="1"
-                            Background="#F8FAFD"
+                            Background="{DynamicResource BackstagePanelBrush}"
                             Padding="18,14">
                         <Grid>
                             <!-- Accueil -->
@@ -227,9 +239,9 @@
                                 <TextBlock Text="Accueil"
                                            FontSize="24"
                                            FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextBrush}" />
+                                           Foreground="{DynamicResource TextBrush}" />
                                 <TextBlock Text="Acces rapide aux actions principales."
-                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                           Foreground="{DynamicResource TextSecondaryBrush}" />
                                 <WrapPanel Orientation="Horizontal">
                                     <Button Classes="backstage-action large"
                                             Command="{Binding $parent[Window].DataContext.NewDocumentCommand}"
@@ -257,9 +269,9 @@
                                 <TextBlock Text="Ouvrir"
                                            FontSize="24"
                                            FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextBrush}" />
+                                           Foreground="{DynamicResource TextBrush}" />
                                 <TextBlock Text="Ouvrir un fichier existant dans un nouvel onglet."
-                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                           Foreground="{DynamicResource TextSecondaryBrush}" />
                                 <Button Classes="backstage-action large"
                                         Command="{Binding $parent[Window].DataContext.OpenFileCommand}"
                                         CommandParameter="{Binding $parent[Window]}"
@@ -269,8 +281,8 @@
                                 <TextBlock Text="Fichiers recents"
                                            FontWeight="SemiBold"
                                            Margin="0,8,0,4"
-                                           Foreground="{StaticResource TextBrush}" />
-                                <ItemsControl ItemsSource="{Binding $parent[Window].DataContext.RecentFiles}">
+                                           Foreground="{DynamicResource TextBrush}" />
+                                <ItemsControl ItemsSource="{Binding $parent[Window].DataContext.TabManager.RecentFiles}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Button Classes="backstage-action"
@@ -289,9 +301,9 @@
                                 <TextBlock Text="Enregistrer"
                                            FontSize="24"
                                            FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextBrush}" />
+                                           Foreground="{DynamicResource TextBrush}" />
                                 <TextBlock Text="Sauvegarder le document actif."
-                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                           Foreground="{DynamicResource TextSecondaryBrush}" />
                                 <Button Classes="backstage-action large"
                                         Command="{Binding $parent[Window].DataContext.SaveFileCommand}"
                                         CommandParameter="{Binding $parent[Window]}"
@@ -318,18 +330,18 @@
                                 <TextBlock Text="Informations"
                                            FontSize="24"
                                            FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextBrush}" />
+                                           Foreground="{DynamicResource TextBrush}" />
                                 <TextBlock Text="Notepad Commander v1.0"
-                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                           Foreground="{DynamicResource TextSecondaryBrush}" />
                                 <Border Classes="backstage-card">
                                     <StackPanel Spacing="4">
                                         <TextBlock Text="Editeur de texte avance"
                                                    FontWeight="SemiBold" />
                                         <TextBlock Text="Inspire par VS Code, Notepad++, Sublime Text"
-                                                   Foreground="{StaticResource TextMutedBrush}"
+                                                   Foreground="{DynamicResource TextMutedBrush}"
                                                    FontSize="12" />
                                         <TextBlock Text="Construit avec AvaloniaUI et AvaloniaEdit"
-                                                   Foreground="{StaticResource TextMutedBrush}"
+                                                   Foreground="{DynamicResource TextMutedBrush}"
                                                    FontSize="12" />
                                     </StackPanel>
                                 </Border>

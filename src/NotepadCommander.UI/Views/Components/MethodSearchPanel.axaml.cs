@@ -1,4 +1,5 @@
 using System.Text;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -13,15 +14,23 @@ namespace NotepadCommander.UI.Views.Components;
 
 public partial class MethodSearchPanel : UserControl
 {
-    private readonly IMethodExtractorService _methodExtractorService;
+    private IMethodExtractorService? _methodExtractorService;
     private string? _searchDirectory;
     private CancellationTokenSource? _cts;
     private List<MethodInfo> _foundMethods = new();
+    private bool _servicesResolved;
 
     public MethodSearchPanel()
     {
         InitializeComponent();
-        _methodExtractorService = App.Services.GetRequiredService<IMethodExtractorService>();
+        AttachedToVisualTree += OnAttachedToVisualTree;
+    }
+
+    private void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        if (_servicesResolved) return;
+        _servicesResolved = true;
+        try { _methodExtractorService = App.Services.GetRequiredService<IMethodExtractorService>(); } catch { }
     }
 
     public void SetSearchDirectory(string? directory)
@@ -42,6 +51,8 @@ public partial class MethodSearchPanel : UserControl
 
     private async Task ExecuteSearch()
     {
+        if (_methodExtractorService == null) return;
+
         var namesBox = this.FindControl<TextBox>("MethodNamesBox");
         var statusText = this.FindControl<TextBlock>("StatusText");
         var resultsTree = this.FindControl<TreeView>("ResultsTree");
@@ -59,7 +70,6 @@ public partial class MethodSearchPanel : UserControl
             return;
         }
 
-        // Parse method names from input (comma or newline separated)
         var methodNames = input
             .Split(new[] { ',', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
             .Select(n => n.Trim())
@@ -73,7 +83,6 @@ public partial class MethodSearchPanel : UserControl
             return;
         }
 
-        // Cancel previous search
         _cts?.Cancel();
         _cts = new CancellationTokenSource();
         var token = _cts.Token;
@@ -93,7 +102,6 @@ public partial class MethodSearchPanel : UserControl
 
             if (token.IsCancellationRequested) return;
 
-            // Group results by file
             var groups = _foundMethods
                 .GroupBy(m => m.FilePath)
                 .Select(g => new MethodFileGroup
@@ -112,7 +120,6 @@ public partial class MethodSearchPanel : UserControl
 
             resultsTree.ItemsSource = groups;
 
-            // Use a TreeDataTemplate via code
             resultsTree.ItemTemplate = new Avalonia.Controls.Templates.FuncTreeDataTemplate<object>(
                 (item, _) =>
                 {
@@ -166,7 +173,7 @@ public partial class MethodSearchPanel : UserControl
         if (_foundMethods.Count == 0) return;
 
         var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel?.DataContext is not MainWindowViewModel vm) return;
+        if (topLevel?.DataContext is not ShellViewModel vm) return;
 
         var sb = new StringBuilder();
 
@@ -182,11 +189,10 @@ public partial class MethodSearchPanel : UserControl
             }
         }
 
-        // Create a new document with the grouped methods
         vm.NewDocumentCommand.Execute(null);
-        if (vm.ActiveTab != null)
+        if (vm.TabManager.ActiveTab != null)
         {
-            vm.ActiveTab.Content = sb.ToString();
+            vm.TabManager.ActiveTab.Content = sb.ToString();
         }
     }
 
@@ -208,13 +214,13 @@ public partial class MethodSearchPanel : UserControl
         if (methodInfo == null) return;
 
         var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel?.DataContext is not MainWindowViewModel vm) return;
+        if (topLevel?.DataContext is not ShellViewModel vm) return;
 
         await vm.OpenFilePath(methodInfo.FilePath);
 
-        if (vm.ActiveTab != null)
+        if (vm.TabManager.ActiveTab != null)
         {
-            vm.ActiveTab.CursorLine = methodInfo.StartLine;
+            vm.TabManager.ActiveTab.CursorLine = methodInfo.StartLine;
         }
     }
 

@@ -15,7 +15,7 @@ public partial class EditToolbar : UserControl
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
-        if (DataContext is MainWindowViewModel mainVm)
+        if (DataContext is ShellViewModel mainVm)
         {
             var transformService = new TextTransformService();
             var commentService = new CommentService();

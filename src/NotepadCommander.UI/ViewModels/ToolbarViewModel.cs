@@ -1,16 +1,10 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using NotepadCommander.UI.Views.Components;
-using Avalonia;
 
 namespace NotepadCommander.UI.ViewModels;
 
 public partial class ToolbarViewModel : ViewModelBase
 {
-    private readonly MainWindowViewModel? _mainViewModel;
-    private readonly Func<ToolbarTab, object?> _toolbarFactory;
-    private readonly Dictionary<ToolbarTab, object?> _toolbarContentCache = new();
-
     public enum ToolbarTab
     {
         Home,
@@ -37,42 +31,9 @@ public partial class ToolbarViewModel : ViewModelBase
     [ObservableProperty]
     private BackstageSection selectedBackstageSection = BackstageSection.Home;
 
-    public ToolbarViewModel(
-        MainWindowViewModel? mainViewModel = null,
-        Func<ToolbarTab, object?>? toolbarFactory = null)
+    public ToolbarViewModel(ShellViewModel? mainViewModel = null)
     {
-        _mainViewModel = mainViewModel;
-        _toolbarFactory = toolbarFactory ?? CreateToolbarForTab;
-    }
-
-    public object? ToolbarContent
-    {
-        get
-        {
-            if (_toolbarContentCache.TryGetValue(ActiveTab, out var cachedContent))
-                return cachedContent;
-
-            var toolbar = _toolbarFactory(ActiveTab);
-
-            if (toolbar is StyledElement styledElement && _mainViewModel != null)
-                styledElement.DataContext = _mainViewModel;
-
-            _toolbarContentCache[ActiveTab] = toolbar;
-            return toolbar;
-        }
-    }
-
-    private static object? CreateToolbarForTab(ToolbarTab tab)
-    {
-        return tab switch
-        {
-            ToolbarTab.Home => new HomeToolbar(),
-            ToolbarTab.Edit => new EditToolbar(),
-            ToolbarTab.View => new ViewToolbar(),
-            ToolbarTab.Tools => new ToolsToolbar(),
-            ToolbarTab.Help => new HelpToolbar(),
-            _ => null
-        };
+        // Kept for test compatibility; no longer creates Views
     }
 
     public bool IsHomeTabActive => ActiveTab == ToolbarTab.Home;
@@ -88,7 +49,6 @@ public partial class ToolbarViewModel : ViewModelBase
     partial void OnActiveTabChanged(ToolbarTab value)
     {
         IsFileBackstageOpen = false;
-        OnPropertyChanged(nameof(ToolbarContent));
         OnPropertyChanged(nameof(IsHomeTabActive));
         OnPropertyChanged(nameof(IsEditTabActive));
         OnPropertyChanged(nameof(IsViewTabActive));

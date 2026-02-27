@@ -1,6 +1,6 @@
 namespace NotepadCommander.Core.Services.FileWatcher;
 
-public interface IFileWatcherService
+public interface IFileWatcherService : IDisposable
 {
     void WatchFile(string filePath);
     void UnwatchFile(string filePath);

@@ -1,29 +1,26 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:aedit="https://github.com/avaloniaui/avaloniaedit"
-             xmlns:vm="using:NotepadCommander.UI.ViewModels"
+             xmlns:controls="using:NotepadCommander.UI.Controls"
              x:Class="NotepadCommander.UI.Views.Components.EditorControl"
              x:CompileBindings="False">
 
-    <Grid>
-        <aedit:TextEditor x:Name="Editor"
-                          FontFamily="Cascadia Code, Consolas, Menlo, monospace"
-                          FontSize="{Binding FontSize}"
-                          ShowLineNumbers="True"
-                          WordWrap="False"
-                          IsReadOnly="False"
-                          Background="White"
-                          Foreground="#333333"
-                          HorizontalAlignment="Stretch"
-                          VerticalAlignment="Stretch"
-                          HorizontalScrollBarVisibility="Auto"
-                          VerticalScrollBarVisibility="Auto" />
+    <Grid ColumnDefinitions="*,Auto">
+        <controls:NotepadEditor x:Name="Editor"
+                                Grid.Column="0"
+                                FontSize="{Binding FontSize}"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch" />
+
+        <controls:MinimapControl x:Name="Minimap"
+                                 Grid.Column="1"
+                                 IsVisible="False" />
 
         <TextBlock Text="Aucun document ouvert"
-                   IsVisible="{Binding !$self.DataContext}"
+                   Grid.ColumnSpan="2"
+                   IsVisible="{Binding $parent[UserControl].DataContext, Converter={x:Static ObjectConverters.IsNull}}"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
-                   Foreground="#999999"
+                   Foreground="{DynamicResource TextMutedBrush}"
                    FontSize="16"
                    IsHitTestVisible="False" />
     </Grid>

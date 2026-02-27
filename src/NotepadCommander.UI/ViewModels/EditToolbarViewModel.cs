@@ -7,12 +7,12 @@ public partial class EditToolbarViewModel : ViewModelBase
 {
     private readonly ITextTransformService _transformService;
     private readonly ICommentService _commentService;
-    private readonly MainWindowViewModel _mainViewModel;
+    private readonly ShellViewModel _mainViewModel;
 
     public EditToolbarViewModel(
         ITextTransformService transformService,
         ICommentService commentService,
-        MainWindowViewModel mainViewModel)
+        ShellViewModel mainViewModel)
     {
         _transformService = transformService;
         _commentService = commentService;
@@ -21,7 +21,7 @@ public partial class EditToolbarViewModel : ViewModelBase
 
     private void ApplyTransform(Func<string, string> transform)
     {
-        var tab = _mainViewModel.ActiveTab;
+        var tab = _mainViewModel.TabManager.ActiveTab;
         if (tab == null) return;
         tab.Content = transform(tab.Content);
     }
@@ -77,7 +77,7 @@ public partial class EditToolbarViewModel : ViewModelBase
     [RelayCommand]
     private void ToggleComment()
     {
-        var tab = _mainViewModel.ActiveTab;
+        var tab = _mainViewModel.TabManager.ActiveTab;
         if (tab == null) return;
         tab.Content = _commentService.ToggleComment(tab.Content, tab.Language);
     }

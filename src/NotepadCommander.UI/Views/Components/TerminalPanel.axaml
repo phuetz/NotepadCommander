@@ -1,0 +1,69 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="NotepadCommander.UI.Views.Components.TerminalPanel"
+             x:CompileBindings="False">
+
+    <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+        <Grid RowDefinitions="Auto,*,Auto">
+            <!-- Header -->
+            <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}" Padding="8,4">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                    <TextBlock Text="TERMINAL"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+                    <Button Grid.Column="1"
+                            Classes="btn-icon"
+                            Width="24" Height="24"
+                            ToolTip.Tip="Redemarrer"
+                            Click="OnRestartClick">
+                        <TextBlock Text="&#x21BB;" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="14" />
+                    </Button>
+                    <Button Grid.Column="2"
+                            Classes="btn-icon"
+                            Width="24" Height="24"
+                            ToolTip.Tip="Fermer"
+                            Click="OnCloseClick">
+                        <TextBlock Text="&#x2715;" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" />
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Output area -->
+            <ScrollViewer Grid.Row="1"
+                          x:Name="OutputScrollViewer"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Auto">
+                <SelectableTextBlock x:Name="OutputText"
+                                     FontFamily="Cascadia Code, Consolas, Menlo, monospace"
+                                     FontSize="13"
+                                     Foreground="{DynamicResource TextPrimaryBrush}"
+                                     Background="{DynamicResource BackgroundBrush}"
+                                     Padding="8,4"
+                                     TextWrapping="NoWrap" />
+            </ScrollViewer>
+
+            <!-- Input area -->
+            <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}" Padding="8,4">
+                <Grid ColumnDefinitions="Auto,*">
+                    <TextBlock Text="&gt;"
+                               Foreground="{DynamicResource PrimaryBrush}"
+                               FontFamily="Cascadia Code, Consolas, Menlo, monospace"
+                               FontSize="13"
+                               VerticalAlignment="Center"
+                               Margin="0,0,4,0" />
+                    <TextBox Grid.Column="1"
+                             x:Name="InputBox"
+                             FontFamily="Cascadia Code, Consolas, Menlo, monospace"
+                             FontSize="13"
+                             Foreground="{DynamicResource TextPrimaryBrush}"
+                             Background="{DynamicResource BackgroundBrush}"
+                             BorderThickness="0"
+                             Watermark="Entrez une commande..."
+                             KeyDown="OnInputKeyDown" />
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

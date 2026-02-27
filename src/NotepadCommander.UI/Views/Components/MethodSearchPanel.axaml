@@ -8,7 +8,7 @@
         <Grid RowDefinitions="Auto,Auto" Margin="4">
             <TextBlock Text="Noms de methodes (un par ligne ou separes par virgule) :"
                        FontSize="10"
-                       Foreground="{StaticResource TextMutedBrush}"
+                       Foreground="{DynamicResource TextMutedBrush}"
                        Margin="0,0,0,4" />
             <TextBox Grid.Row="1"
                      Name="MethodNamesBox"
@@ -52,7 +52,7 @@
                    Name="StatusText"
                    Text=""
                    FontSize="10"
-                   Foreground="{StaticResource TextMutedBrush}"
+                   Foreground="{DynamicResource TextMutedBrush}"
                    Padding="6,4"
                    TextTrimming="CharacterEllipsis" />
     </Grid>

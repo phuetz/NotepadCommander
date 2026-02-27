@@ -2,38 +2,106 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:NotepadCommander.UI.ViewModels"
              x:Class="NotepadCommander.UI.Views.Components.StatusBar"
-             x:DataType="vm:DocumentTabViewModel">
+             x:CompileBindings="False">
 
     <Border Classes="status-bar-shell"
-            BorderBrush="{StaticResource BorderBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="0,1,0,0"
             Padding="10,4">
         <Grid ColumnDefinitions="Auto,*,Auto">
             <!-- Position curseur -->
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <TextBlock Classes="status-label strong"
-                           Text="{Binding CursorPositionDisplay, FallbackValue='Ln 1, Col 1'}" />
+                           Text="{Binding TabManager.ActiveTab.CursorPositionDisplay, FallbackValue='Ln 1, Col 1'}" />
             </StackPanel>
 
-            <!-- Zone centrale (vide pour l'instant) -->
-            <StackPanel Grid.Column="1" />
+            <!-- Zone centrale : Zoom slider -->
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Spacing="8">
+                <Button Classes="btn-icon" Width="24" Height="24"
+                        Command="{Binding ZoomOutCommand}"
+                        ToolTip.Tip="Zoom arriere">
+                    <TextBlock Text="-" FontSize="14" FontWeight="Bold"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </Button>
+                <Slider Value="{Binding Settings.ZoomLevel}"
+                        Minimum="50" Maximum="300"
+                        Width="120"
+                        VerticalAlignment="Center" />
+                <Button Classes="btn-icon" Width="24" Height="24"
+                        Command="{Binding ZoomInCommand}"
+                        ToolTip.Tip="Zoom avant">
+                    <TextBlock Text="+" FontSize="14" FontWeight="Bold"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </Button>
+                <TextBlock Classes="status-label"
+                           Text="{Binding Settings.ZoomLevel, StringFormat='{}{0:0}%'}"
+                           Width="40" />
+            </StackPanel>
 
-            <!-- Informations document -->
+            <!-- Informations document (interactives) -->
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
-                <Border Classes="status-value-pill">
+                <!-- Encoding selector -->
+                <Button Classes="btn-toolbar" Padding="6,2" ToolTip.Tip="Changer l'encodage">
                     <TextBlock Classes="status-label"
-                               Text="{Binding EncodingDisplay, FallbackValue='UTF-8'}" />
-                </Border>
+                               Text="{Binding TabManager.ActiveTab.EncodingDisplay, FallbackValue='UTF-8'}" />
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuItem Header="UTF-8" Tag="Utf8" Click="OnEncodingSelected" />
+                            <MenuItem Header="UTF-8 BOM" Tag="Utf8Bom" Click="OnEncodingSelected" />
+                            <MenuItem Header="ASCII" Tag="Ascii" Click="OnEncodingSelected" />
+                            <MenuItem Header="ISO 8859-1" Tag="Latin1" Click="OnEncodingSelected" />
+                            <MenuItem Header="UTF-16 LE" Tag="Utf16Le" Click="OnEncodingSelected" />
+                            <MenuItem Header="UTF-16 BE" Tag="Utf16Be" Click="OnEncodingSelected" />
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
                 <Border Classes="status-separator" />
-                <Border Classes="status-value-pill">
+                <!-- Line ending selector -->
+                <Button Classes="btn-toolbar" Padding="6,2" ToolTip.Tip="Changer la fin de ligne">
                     <TextBlock Classes="status-label"
-                               Text="{Binding LineEndingDisplay, FallbackValue='CRLF'}" />
-                </Border>
+                               Text="{Binding TabManager.ActiveTab.LineEndingDisplay, FallbackValue='CRLF'}" />
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuItem Header="CRLF (Windows)" Tag="CrLf" Click="OnLineEndingSelected" />
+                            <MenuItem Header="LF (Unix)" Tag="Lf" Click="OnLineEndingSelected" />
+                            <MenuItem Header="CR (Mac classique)" Tag="Cr" Click="OnLineEndingSelected" />
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
                 <Border Classes="status-separator" />
-                <Border Classes="status-value-pill">
+                <!-- Language selector -->
+                <Button Classes="btn-toolbar" Padding="6,2" ToolTip.Tip="Changer le langage">
                     <TextBlock Classes="status-label accent"
-                               Text="{Binding LanguageDisplay, FallbackValue='Texte brut'}" />
-                </Border>
+                               Text="{Binding TabManager.ActiveTab.LanguageDisplay, FallbackValue='Texte brut'}" />
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuItem Header="Texte brut" Tag="PlainText" Click="OnLanguageSelected" />
+                            <MenuItem Header="C#" Tag="CSharp" Click="OnLanguageSelected" />
+                            <MenuItem Header="JavaScript" Tag="JavaScript" Click="OnLanguageSelected" />
+                            <MenuItem Header="TypeScript" Tag="TypeScript" Click="OnLanguageSelected" />
+                            <MenuItem Header="Python" Tag="Python" Click="OnLanguageSelected" />
+                            <MenuItem Header="Java" Tag="Java" Click="OnLanguageSelected" />
+                            <MenuItem Header="C++" Tag="Cpp" Click="OnLanguageSelected" />
+                            <MenuItem Header="C" Tag="C" Click="OnLanguageSelected" />
+                            <MenuItem Header="HTML" Tag="Html" Click="OnLanguageSelected" />
+                            <MenuItem Header="CSS" Tag="Css" Click="OnLanguageSelected" />
+                            <MenuItem Header="XML" Tag="Xml" Click="OnLanguageSelected" />
+                            <MenuItem Header="JSON" Tag="Json" Click="OnLanguageSelected" />
+                            <MenuItem Header="YAML" Tag="Yaml" Click="OnLanguageSelected" />
+                            <MenuItem Header="Markdown" Tag="Markdown" Click="OnLanguageSelected" />
+                            <MenuItem Header="SQL" Tag="Sql" Click="OnLanguageSelected" />
+                            <MenuItem Header="PowerShell" Tag="PowerShell" Click="OnLanguageSelected" />
+                            <MenuItem Header="Bash" Tag="Bash" Click="OnLanguageSelected" />
+                            <MenuItem Header="Ruby" Tag="Ruby" Click="OnLanguageSelected" />
+                            <MenuItem Header="Go" Tag="Go" Click="OnLanguageSelected" />
+                            <MenuItem Header="Rust" Tag="Rust" Click="OnLanguageSelected" />
+                            <MenuItem Header="PHP" Tag="Php" Click="OnLanguageSelected" />
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
             </StackPanel>
         </Grid>
     </Border>

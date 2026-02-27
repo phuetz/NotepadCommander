@@ -13,7 +13,7 @@
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center">
                                 <Path Data="M19,17H22L18,21L14,17H17V3H19M2,17H12V19H2M6,5V7H2V5M2,11H9V13H2V11Z"
-                                      Fill="{StaticResource TextSecondaryBrush}" />
+                                      Fill="{DynamicResource TextSecondaryBrush}" />
                             </Viewbox>
                             <TextBlock Text="Trier A-Z" />
                         </StackPanel>
@@ -22,7 +22,7 @@
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center">
                                 <Path Data="M19,7H22L18,3L14,7H17V21H19M2,17H12V19H2M6,5V7H2V5M2,11H9V13H2V11Z"
-                                      Fill="{StaticResource TextSecondaryBrush}" />
+                                      Fill="{DynamicResource TextSecondaryBrush}" />
                             </Viewbox>
                             <TextBlock Text="Trier Z-A" />
                         </StackPanel>
@@ -31,7 +31,7 @@
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center">
                                 <Path Data="M11,17A1,1 0 0,0 12,18A1,1 0 0,0 13,17A1,1 0 0,0 12,16A1,1 0 0,0 11,17M11,3V7H13V5.08C16.39,5.57 19,8.47 19,12A7,7 0 0,1 12,19A7,7 0 0,1 5,12C5,10.15 5.67,8.46 6.78,7.15L5.37,5.74C3.89,7.41 3,9.6 3,12A9,9 0 0,0 12,21A9,9 0 0,0 21,12A9,9 0 0,0 12,3H11M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9Z"
-                                      Fill="{StaticResource TextSecondaryBrush}" />
+                                      Fill="{DynamicResource TextSecondaryBrush}" />
                             </Viewbox>
                             <TextBlock Text="Doublons" />
                         </StackPanel>
@@ -50,21 +50,21 @@
                     <Button Classes="toolbar-button" Command="{Binding ToUpperCaseCommand}" ToolTip.Tip="MAJUSCULES">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <TextBlock Text="AB" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"
-                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
                             <TextBlock Text="MAJUSCULES" />
                         </StackPanel>
                     </Button>
                     <Button Classes="toolbar-button" Command="{Binding ToLowerCaseCommand}" ToolTip.Tip="minuscules">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <TextBlock Text="ab" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"
-                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
                             <TextBlock Text="minuscules" />
                         </StackPanel>
                     </Button>
                     <Button Classes="toolbar-button" Command="{Binding ToTitleCaseCommand}" ToolTip.Tip="Titre">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <TextBlock Text="Ab" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"
-                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
                             <TextBlock Text="Titre" />
                         </StackPanel>
                     </Button>
@@ -83,7 +83,7 @@
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center">
                                 <Path Data="M3,4H21V8H19V6H5V18H19V16H21V20H3V4M15,13V16L21,12L15,8V11H7V13H15Z"
-                                      Fill="{StaticResource TextSecondaryBrush}" />
+                                      Fill="{DynamicResource TextSecondaryBrush}" />
                             </Viewbox>
                             <TextBlock Text="Rogner" />
                         </StackPanel>
@@ -92,7 +92,7 @@
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center">
                                 <Path Data="M9,3V4H4V6H9V7H5V8H9V9H3V10H9V11H5V12H9V13H3V14H9V15H5V16H9V17H3V18H9V19H5V20H9V21H11V3H9Z"
-                                      Fill="{StaticResource TextSecondaryBrush}" />
+                                      Fill="{DynamicResource TextSecondaryBrush}" />
                             </Viewbox>
                             <TextBlock Text="Lignes vides" />
                         </StackPanel>
@@ -110,7 +110,7 @@
                 <Button Classes="toolbar-button" Command="{Binding ToggleCommentCommand}" ToolTip.Tip="Commenter/Decommenter (Ctrl+/)">
                     <StackPanel HorizontalAlignment="Center" Spacing="4">
                         <TextBlock Text="//" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"
-                                   Foreground="{StaticResource PrimaryBrush}" />
+                                   Foreground="{DynamicResource PrimaryBrush}" />
                         <TextBlock Text="Commenter" />
                     </StackPanel>
                 </Button>
@@ -127,14 +127,14 @@
                     <Button Classes="toolbar-button" Command="{Binding FormatJsonCommand}" ToolTip.Tip="Formater JSON">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <TextBlock Text="{}" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"
-                                       Foreground="{StaticResource PrimaryBrush}" />
+                                       Foreground="{DynamicResource PrimaryBrush}" />
                             <TextBlock Text="JSON" />
                         </StackPanel>
                     </Button>
                     <Button Classes="toolbar-button" Command="{Binding FormatXmlCommand}" ToolTip.Tip="Formater XML">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <TextBlock Text="&lt;/>" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center"
-                                       Foreground="{StaticResource PrimaryBrush}" />
+                                       Foreground="{DynamicResource PrimaryBrush}" />
                             <TextBlock Text="XML" />
                         </StackPanel>
                     </Button>
@@ -152,28 +152,28 @@
                     <Button Classes="toolbar-button" Command="{Binding EncodeBase64Command}" ToolTip.Tip="Encoder Base64">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <TextBlock Text="B64" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center"
-                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
                             <TextBlock Text="Encoder" />
                         </StackPanel>
                     </Button>
                     <Button Classes="toolbar-button" Command="{Binding DecodeBase64Command}" ToolTip.Tip="Decoder Base64">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <TextBlock Text="B64" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center"
-                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
                             <TextBlock Text="Decoder" />
                         </StackPanel>
                     </Button>
                     <Button Classes="toolbar-button" Command="{Binding EncodeUrlCommand}" ToolTip.Tip="Encoder URL">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <TextBlock Text="URL" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center"
-                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
                             <TextBlock Text="Encoder" />
                         </StackPanel>
                     </Button>
                     <Button Classes="toolbar-button" Command="{Binding DecodeUrlCommand}" ToolTip.Tip="Decoder URL">
                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                             <TextBlock Text="URL" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center"
-                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
                             <TextBlock Text="Decoder" />
                         </StackPanel>
                     </Button>
