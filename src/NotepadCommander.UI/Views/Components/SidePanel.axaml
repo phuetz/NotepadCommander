@@ -159,11 +159,16 @@
                 </WrapPanel>
             </Border>
 
-            <!-- File tree (files view) -->
+            <!-- File tree (files view, virtualized) -->
             <Grid Grid.Row="6" Name="FilesPanel">
                 <TreeView Name="FileTree"
                           Padding="4"
                           IsVisible="False">
+                    <TreeView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel />
+                        </ItemsPanelTemplate>
+                    </TreeView.ItemsPanel>
                     <TreeView.ItemTemplate>
                         <TreeDataTemplate ItemsSource="{Binding Children}">
                             <StackPanel Orientation="Horizontal" Spacing="6">

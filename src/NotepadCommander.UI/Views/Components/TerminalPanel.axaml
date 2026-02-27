@@ -4,7 +4,7 @@
              x:CompileBindings="False">
 
     <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
-        <Grid RowDefinitions="Auto,*,Auto">
+        <Grid RowDefinitions="Auto,*,Auto,Auto">
             <!-- Header -->
             <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}" Padding="8,4">
                 <Grid ColumnDefinitions="*,Auto,Auto">
@@ -30,22 +30,31 @@
                 </Grid>
             </Border>
 
-            <!-- Output area -->
+            <!-- Output area (ANSI colored lines) -->
             <ScrollViewer Grid.Row="1"
                           x:Name="OutputScrollViewer"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Auto">
-                <SelectableTextBlock x:Name="OutputText"
-                                     FontFamily="Cascadia Code, Consolas, Menlo, monospace"
-                                     FontSize="13"
-                                     Foreground="{DynamicResource TextPrimaryBrush}"
-                                     Background="{DynamicResource BackgroundBrush}"
-                                     Padding="8,4"
-                                     TextWrapping="NoWrap" />
+                <ItemsControl x:Name="OutputRepeater"
+                               Margin="8,4" />
             </ScrollViewer>
 
+            <!-- Tab completion suggestions popup -->
+            <Border Grid.Row="2"
+                    x:Name="SuggestionsPanel"
+                    IsVisible="False"
+                    Background="{DynamicResource ToolbarBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="0,1,0,0"
+                    Padding="4,2"
+                    MaxHeight="120">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl x:Name="SuggestionsRepeater" />
+                </ScrollViewer>
+            </Border>
+
             <!-- Input area -->
-            <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}" Padding="8,4">
+            <Border Grid.Row="3" Background="{DynamicResource SurfaceBrush}" Padding="8,4">
                 <Grid ColumnDefinitions="Auto,*">
                     <TextBlock Text="&gt;"
                                Foreground="{DynamicResource PrimaryBrush}"

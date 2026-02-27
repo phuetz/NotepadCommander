@@ -80,7 +80,7 @@ public partial class SearchToolViewModel : ToolViewModel
             CaseSensitive = CaseSensitive,
             WholeWord = WholeWord,
             UseRegex = UseRegex,
-            MaxResults = 500
+            MaxResults = 2000
         };
 
         try

@@ -65,6 +65,15 @@ public partial class MarkdownPreviewPanel : UserControl
         panel?.Children.Clear();
     }
 
+    public void ScrollToRatio(double ratio)
+    {
+        var scrollViewer = this.FindControl<ScrollViewer>("ContentScrollViewer");
+        if (scrollViewer == null) return;
+        var maxScroll = scrollViewer.Extent.Height - scrollViewer.Viewport.Height;
+        if (maxScroll <= 0) return;
+        scrollViewer.Offset = new Avalonia.Vector(scrollViewer.Offset.X, maxScroll * Math.Clamp(ratio, 0, 1));
+    }
+
     private void OnCloseClick(object? sender, RoutedEventArgs e)
     {
         var window = TopLevel.GetTopLevel(this);

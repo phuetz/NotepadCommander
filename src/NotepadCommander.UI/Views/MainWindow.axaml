@@ -47,7 +47,9 @@
                 Height="36">
             <ScrollViewer HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Disabled">
-                <ItemsControl ItemsSource="{Binding TabManager.Tabs}">
+                <ItemsControl ItemsSource="{Binding TabManager.Tabs}"
+                              DragDrop.AllowDrop="True"
+                              x:Name="TabBar">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel Orientation="Horizontal" Spacing="2" />
@@ -59,7 +61,9 @@
                                     Padding="10,6"
                                     ToolTip.Tip="{Binding FilePath}"
                                     Tag="{Binding}"
-                                    Click="OnTabClick">
+                                    Click="OnTabClick"
+                                    PointerPressed="OnTabPointerPressed"
+                                    DragDrop.AllowDrop="True">
                                 <Button.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Fermer"
@@ -73,6 +77,13 @@
                                         <Separator />
                                         <MenuItem Header="Nouveau"
                                                   Command="{Binding $parent[Window].DataContext.NewDocumentCommand}" />
+                                        <Separator />
+                                        <MenuItem Header="Copier le chemin"
+                                                  Command="{Binding $parent[Window].DataContext.CopyTabPathCommand}"
+                                                  CommandParameter="{Binding}" />
+                                        <MenuItem Header="Reveler dans l'explorateur"
+                                                  Command="{Binding $parent[Window].DataContext.RevealInExplorerCommand}"
+                                                  CommandParameter="{Binding}" />
                                     </ContextMenu>
                                 </Button.ContextMenu>
                                 <Grid ColumnDefinitions="*,Auto">
@@ -99,6 +110,10 @@
                 </ItemsControl>
             </ScrollViewer>
         </Border>
+
+        <!-- Breadcrumb bar -->
+        <components:BreadcrumbBar DockPanel.Dock="Top"
+                                   FilePath="{Binding TabManager.ActiveTab.FilePath}" />
 
         <!-- Barre d'etat -->
         <components:StatusBar DockPanel.Dock="Bottom" />
@@ -147,28 +162,101 @@
                                 <TextBox Text="{Binding CommandPalette.Query, Mode=TwoWay}"
                                          Watermark="Tapez une commande..."
                                          Margin="8"
-                                         x:Name="CommandPaletteInput" />
-                                <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
-                                    <ItemsControl ItemsSource="{Binding CommandPalette.Items}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Button Classes="btn-toolbar"
-                                                        HorizontalAlignment="Stretch"
-                                                        HorizontalContentAlignment="Stretch"
-                                                        Padding="12,8"
-                                                        Command="{Binding $parent[Window].DataContext.ExecuteCommandPaletteItemCommand}"
-                                                        CommandParameter="{Binding}">
-                                                    <Grid ColumnDefinitions="*,Auto">
-                                                        <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
-                                                        <TextBlock Grid.Column="1" Text="{Binding Shortcut}"
-                                                                   Foreground="{DynamicResource TextMutedBrush}" FontSize="11"
-                                                                   VerticalAlignment="Center" />
-                                                    </Grid>
-                                                </Button>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </ScrollViewer>
+                                         x:Name="CommandPaletteInput"
+                                         KeyDown="OnCommandPaletteKeyDown" />
+                                <ListBox ItemsSource="{Binding CommandPalette.Items}"
+                                         SelectedIndex="{Binding CommandPalette.SelectedIndex, Mode=TwoWay}"
+                                         MaxHeight="320"
+                                         x:Name="CommandPaletteList"
+                                         DoubleTapped="OnCommandPaletteDoubleTapped">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="*,Auto" Margin="8,4">
+                                                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Shortcut}"
+                                                           Foreground="{DynamicResource TextMutedBrush}" FontSize="11"
+                                                           VerticalAlignment="Center" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Clipboard History overlay -->
+                        <Border IsVisible="{Binding Clipboard.IsVisible}"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Center"
+                                Margin="0,20,0,0"
+                                Background="{DynamicResource ToolbarBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Width="450"
+                                MaxHeight="400"
+                                BoxShadow="0 4 12 2 #40000000"
+                                ZIndex="100">
+                            <Grid RowDefinitions="Auto,*,Auto">
+                                <TextBox Text="{Binding Clipboard.Filter, Mode=TwoWay}"
+                                         Watermark="Filtrer l'historique..."
+                                         Margin="8"
+                                         x:Name="ClipboardFilterInput"
+                                         KeyDown="OnClipboardHistoryKeyDown" />
+                                <ListBox Grid.Row="1"
+                                         ItemsSource="{Binding Clipboard.FilteredItems}"
+                                         SelectedIndex="{Binding Clipboard.SelectedIndex, Mode=TwoWay}"
+                                         MaxHeight="220"
+                                         DoubleTapped="OnClipboardHistoryDoubleTapped">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       MaxLines="1"
+                                                       FontFamily="Cascadia Code, Consolas, monospace"
+                                                       FontSize="11"
+                                                       Padding="8,4" />
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <Border Grid.Row="2"
+                                        Background="{DynamicResource SurfaceBrush}"
+                                        Padding="8,6"
+                                        CornerRadius="0,0,6,6"
+                                        MaxHeight="80">
+                                    <TextBlock Text="{Binding Clipboard.PreviewText}"
+                                               FontFamily="Cascadia Code, Consolas, monospace"
+                                               FontSize="10"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap"
+                                               MaxLines="3"
+                                               TextTrimming="CharacterEllipsis" />
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- Go-to-line overlay -->
+                        <Border IsVisible="{Binding IsGoToLineVisible}"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Center"
+                                Margin="0,20,0,0"
+                                Background="{DynamicResource ToolbarBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Width="300"
+                                BoxShadow="0 4 12 2 #40000000"
+                                ZIndex="100"
+                                Padding="12">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Aller a la ligne" FontWeight="SemiBold" FontSize="13" />
+                                <TextBox Text="{Binding GoToLineInput, Mode=TwoWay}"
+                                         Watermark="Numero de ligne..."
+                                         x:Name="GoToLineInput"
+                                         KeyDown="OnGoToLineKeyDown" />
+                                <TextBlock Text="{Binding GoToLineError}"
+                                           Foreground="Red"
+                                           FontSize="11"
+                                           IsVisible="{Binding GoToLineError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                             </StackPanel>
                         </Border>
                     </Grid>

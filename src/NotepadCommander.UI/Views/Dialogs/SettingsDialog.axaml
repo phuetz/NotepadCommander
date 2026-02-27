@@ -2,9 +2,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="NotepadCommander.UI.Views.Dialogs.SettingsDialog"
         Title="Preferences"
-        Width="550" Height="500"
+        Width="550" Height="560"
         WindowStartupLocation="CenterOwner"
-        CanResize="False">
+        CanResize="False"
+        x:CompileBindings="False">
 
     <Border Padding="24" Background="{DynamicResource ToolbarBrush}">
         <DockPanel>
@@ -14,9 +15,9 @@
 
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
                         HorizontalAlignment="Right" Spacing="8" Margin="0,16,0,0">
-                <Button Content="Reinitialiser" Name="ResetButton" Width="120" />
-                <Button Content="Annuler" Name="CancelButton" Width="100" />
-                <Button Content="Enregistrer" Name="SaveButton" Classes="btn-primary" Width="120" />
+                <Button Content="Reinitialiser" Command="{Binding ResetCommand}" Width="120" />
+                <Button Content="Annuler" Command="{Binding CloseDialogCommand}" Width="100" />
+                <Button Content="Enregistrer" Command="{Binding SaveCommand}" Classes="btn-primary" Width="120" />
             </StackPanel>
 
             <ScrollViewer>
@@ -26,29 +27,29 @@
                     <StackPanel Spacing="8">
                         <Grid ColumnDefinitions="200,*">
                             <TextBlock Text="Taille de police" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Column="1" Name="FontSizeInput" Minimum="8" Maximum="72"
-                                           Value="14" Width="120" HorizontalAlignment="Left" />
+                            <NumericUpDown Grid.Column="1" Minimum="8" Maximum="72"
+                                           Value="{Binding FontSize}" Width="120" HorizontalAlignment="Left" />
                         </Grid>
                         <Grid ColumnDefinitions="200,*">
                             <TextBlock Text="Famille de police" VerticalAlignment="Center" />
-                            <TextBox Grid.Column="1" Name="FontFamilyInput"
-                                     Text="Cascadia Code" Width="200" HorizontalAlignment="Left" />
+                            <TextBox Grid.Column="1" Text="{Binding FontFamily}"
+                                     Width="200" HorizontalAlignment="Left" />
                         </Grid>
                         <Grid ColumnDefinitions="200,*">
                             <TextBlock Text="Numeros de ligne" VerticalAlignment="Center" />
-                            <CheckBox Grid.Column="1" Name="ShowLineNumbersCheck" IsChecked="True" />
+                            <CheckBox Grid.Column="1" IsChecked="{Binding ShowLineNumbers}" />
                         </Grid>
                         <Grid ColumnDefinitions="200,*">
                             <TextBlock Text="Retour a la ligne" VerticalAlignment="Center" />
-                            <CheckBox Grid.Column="1" Name="WordWrapCheck" IsChecked="False" />
+                            <CheckBox Grid.Column="1" IsChecked="{Binding WordWrap}" />
                         </Grid>
                         <Grid ColumnDefinitions="200,*">
                             <TextBlock Text="Surligner ligne courante" VerticalAlignment="Center" />
-                            <CheckBox Grid.Column="1" Name="HighlightLineCheck" IsChecked="True" />
+                            <CheckBox Grid.Column="1" IsChecked="{Binding HighlightCurrentLine}" />
                         </Grid>
                         <Grid ColumnDefinitions="200,*">
                             <TextBlock Text="Afficher les espaces" VerticalAlignment="Center" />
-                            <CheckBox Grid.Column="1" Name="ShowWhitespaceCheck" IsChecked="False" />
+                            <CheckBox Grid.Column="1" IsChecked="{Binding ShowWhitespace}" />
                         </Grid>
                     </StackPanel>
 
@@ -59,28 +60,44 @@
                     <StackPanel Spacing="8">
                         <Grid ColumnDefinitions="200,*">
                             <TextBlock Text="Activer" VerticalAlignment="Center" />
-                            <CheckBox Grid.Column="1" Name="AutoSaveCheck" IsChecked="False" />
+                            <CheckBox Grid.Column="1" IsChecked="{Binding AutoSave}" />
                         </Grid>
                         <Grid ColumnDefinitions="200,*">
                             <TextBlock Text="Intervalle (secondes)" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Column="1" Name="AutoSaveIntervalInput"
-                                           Minimum="10" Maximum="600" Value="60"
+                            <NumericUpDown Grid.Column="1" Minimum="10" Maximum="600"
+                                           Value="{Binding AutoSaveIntervalSeconds}"
                                            Width="120" HorizontalAlignment="Left" />
                         </Grid>
                     </StackPanel>
 
                     <Border Height="1" Background="{DynamicResource BorderBrush}" />
 
-                    <!-- Theme -->
+                    <!-- Theme Chrome -->
                     <TextBlock Text="Apparence" FontWeight="Bold" FontSize="14" />
                     <Grid ColumnDefinitions="200,*">
                         <TextBlock Text="Theme" VerticalAlignment="Center" />
-                        <ComboBox Grid.Column="1" Name="ThemeCombo" Width="150" HorizontalAlignment="Left"
-                                  SelectedIndex="0">
+                        <ComboBox Grid.Column="1" SelectedIndex="{Binding ThemeIndex}" Width="150" HorizontalAlignment="Left">
                             <ComboBoxItem Content="Clair" />
                             <ComboBoxItem Content="Sombre" />
                         </ComboBox>
                     </Grid>
+
+                    <Border Height="1" Background="{DynamicResource BorderBrush}" />
+
+                    <!-- Theme editeur -->
+                    <TextBlock Text="Theme de l'editeur" FontWeight="Bold" FontSize="14" />
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="200,*">
+                            <TextBlock Text="Theme TextMate" VerticalAlignment="Center" />
+                            <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableEditorThemes}"
+                                      SelectedItem="{Binding SelectedEditorTheme}"
+                                      Width="200" HorizontalAlignment="Left" />
+                        </Grid>
+                        <Grid ColumnDefinitions="200,*">
+                            <TextBlock Text="Suivre le theme Chrome" VerticalAlignment="Center" />
+                            <CheckBox Grid.Column="1" IsChecked="{Binding FollowChromeTheme}" />
+                        </Grid>
+                    </StackPanel>
                 </StackPanel>
             </ScrollViewer>
         </DockPanel>

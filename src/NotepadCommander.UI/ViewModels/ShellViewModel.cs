@@ -89,8 +89,18 @@ public partial class ShellViewModel : ViewModelBase
     public event Action<string?>? ActiveFileChanged;
     public event Action<string, string>? FileChangedExternally;
 
-    // Clipboard history event
-    public event Action? ShowClipboardHistoryRequested;
+    // Clipboard history paste event (inline overlay sends text to paste)
+    public event Action<string>? ClipboardPasteRequested;
+
+    // Go-to-line overlay
+    [ObservableProperty]
+    private bool isGoToLineVisible;
+
+    [ObservableProperty]
+    private string goToLineInput = string.Empty;
+
+    [ObservableProperty]
+    private string? goToLineError;
 
     public ShellViewModel(
         TabManagerViewModel tabManager,
@@ -138,8 +148,8 @@ public partial class ShellViewModel : ViewModelBase
         TabManager.ActiveFileChanged += path => ActiveFileChanged?.Invoke(path);
         TabManager.FileChangedExternally += (path, msg) => FileChangedExternally?.Invoke(path, msg);
 
-        // Forward clipboard show request
-        Clipboard.ShowRequested += () => ShowClipboardHistoryRequested?.Invoke();
+        // Forward clipboard paste request
+        Clipboard.PasteRequested += text => ClipboardPasteRequested?.Invoke(text);
 
         // Wire tool panel events
         FileExplorer.FileOpenRequested += async path => await TabManager.OpenFilePath(path);
@@ -295,7 +305,7 @@ public partial class ShellViewModel : ViewModelBase
     private void GoToMatchingBracket() => GoToMatchingBracketRequested?.Invoke();
 
     [RelayCommand]
-    private void ShowClipboardHistory() => Clipboard.RequestShow();
+    private void ShowClipboardHistory() => Clipboard.Show();
 
     [RelayCommand]
     private void SelectWordAndHighlight()
@@ -344,6 +354,65 @@ public partial class ShellViewModel : ViewModelBase
 
     [RelayCommand]
     private void ExecuteCommandPaletteItem(CommandPaletteItem? item) => CommandPalette.ExecuteItem(item);
+
+    // Go-to-line overlay
+    [RelayCommand]
+    private void ShowGoToLine()
+    {
+        if (TabManager.ActiveTab == null) return;
+        GoToLineInput = string.Empty;
+        GoToLineError = null;
+        IsGoToLineVisible = true;
+    }
+
+    [RelayCommand]
+    private void HideGoToLine()
+    {
+        IsGoToLineVisible = false;
+    }
+
+    [RelayCommand]
+    private void ConfirmGoToLine()
+    {
+        if (TabManager.ActiveTab == null) return;
+        var lineCount = TabManager.ActiveTab.Content.Split('\n').Length;
+        if (int.TryParse(GoToLineInput, out var line) && line >= 1 && line <= lineCount)
+        {
+            TabManager.ActiveTab.CursorLine = line;
+            IsGoToLineVisible = false;
+        }
+        else
+        {
+            GoToLineError = $"Ligne entre 1 et {lineCount}";
+        }
+    }
+
+    // Copy tab path / reveal in explorer
+    public event Action<string>? CopyToClipboardRequested;
+
+    [RelayCommand]
+    private void CopyTabPath(DocumentTabViewModel? tab)
+    {
+        tab ??= TabManager.ActiveTab;
+        if (tab?.FilePath != null)
+            CopyToClipboardRequested?.Invoke(tab.FilePath);
+    }
+
+    [RelayCommand]
+    private void RevealInExplorer(DocumentTabViewModel? tab)
+    {
+        tab ??= TabManager.ActiveTab;
+        if (tab?.FilePath == null) return;
+        var dir = Path.GetDirectoryName(tab.FilePath);
+        if (dir != null && Directory.Exists(dir))
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = dir,
+                UseShellExecute = true
+            });
+        }
+    }
 
     // Session delegation
     public void SaveSession() => Session.SaveSession();

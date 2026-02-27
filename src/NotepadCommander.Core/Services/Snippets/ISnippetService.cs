@@ -7,6 +7,9 @@ public interface ISnippetService
     List<Snippet> GetAll();
     List<Snippet> GetByLanguage(SupportedLanguage language);
     Snippet? FindByTrigger(string trigger, SupportedLanguage language);
+    List<string> GetCategories();
+    string ExportToJson();
+    void ImportFromJson(string json);
     void Add(Snippet snippet);
     void Update(Snippet snippet);
     void Delete(string name);

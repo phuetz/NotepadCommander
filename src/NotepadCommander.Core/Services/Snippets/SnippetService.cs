@@ -46,6 +46,39 @@ public class SnippetService : ISnippetService
         }
     }
 
+    public List<string> GetCategories() =>
+        _snippets.Select(s => s.Category).Distinct().OrderBy(c => c).ToList();
+
+    public string ExportToJson()
+    {
+        return JsonSerializer.Serialize(_snippets, new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    public void ImportFromJson(string json)
+    {
+        try
+        {
+            var imported = JsonSerializer.Deserialize<List<Snippet>>(json);
+            if (imported == null) return;
+
+            foreach (var snippet in imported)
+            {
+                if (string.IsNullOrEmpty(snippet.Name)) continue;
+                var existing = _snippets.FindIndex(s => s.Name == snippet.Name);
+                if (existing >= 0)
+                    _snippets[existing] = snippet;
+                else
+                    _snippets.Add(snippet);
+            }
+
+            Save();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Impossible d'importer les snippets");
+        }
+    }
+
     public void Delete(string name)
     {
         _snippets.RemoveAll(s => s.Name == name);

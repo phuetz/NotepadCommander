@@ -27,6 +27,11 @@ public partial class EditorControl : UserControl
     private EditorEventBridge? _eventBridge;
     private ITextTransformService? _textTransformService;
 
+    /// <summary>
+    /// Fired when the editor scrolls. Parameter is the vertical scroll ratio (0.0 to 1.0).
+    /// </summary>
+    public event Action<double>? EditorScrollChanged;
+
     public EditorControl()
     {
         InitializeComponent();
@@ -48,6 +53,7 @@ public partial class EditorControl : UserControl
         _editor.TextChanged += OnTextChanged;
         _editor.TextArea.SelectionChanged += OnSelectionChanged;
         _editor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
+        _editor.TextArea.TextView.ScrollOffsetChanged += OnEditorScrollOffsetChanged;
 
         if (_editor.FontSize <= 0)
             _editor.FontSize = 14;
@@ -340,6 +346,17 @@ public partial class EditorControl : UserControl
                 _editor.ScrollTo(caret.Line, caret.Column);
             }
         }
+    }
+
+    private void OnEditorScrollOffsetChanged(object? sender, EventArgs e)
+    {
+        if (_editor == null) return;
+        var textView = _editor.TextArea.TextView;
+        var extent = textView.DocumentHeight;
+        var viewport = textView.Bounds.Height;
+        if (extent <= viewport) return;
+        var ratio = textView.ScrollOffset.Y / (extent - viewport);
+        EditorScrollChanged?.Invoke(Math.Clamp(ratio, 0, 1));
     }
 
     private void UpdateMinimapVisibility()

@@ -1,58 +1,57 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="using:NotepadCommander.UI.Models"
              x:Class="NotepadCommander.UI.Views.Components.SearchPanel"
              x:CompileBindings="False">
 
     <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
         <!-- Search input -->
         <Grid ColumnDefinitions="*,Auto" Margin="4">
-            <TextBox Name="SearchPatternBox"
+            <TextBox Text="{Binding SearchPattern, Mode=TwoWay}"
                      Watermark="Rechercher dans les fichiers..."
                      FontSize="12"
+                     x:Name="SearchPatternBox"
                      KeyDown="OnSearchKeyDown" />
             <Button Grid.Column="1"
-                    Name="SearchButton"
                     Content="Go"
                     Width="36" Height="28"
                     Margin="4,0,0,0"
                     FontSize="11"
-                    Click="OnSearchClick" />
+                    Command="{Binding SearchCommand}" />
         </Grid>
 
         <!-- Options -->
         <WrapPanel Grid.Row="1" Margin="4,0,4,4">
-            <CheckBox Name="CaseSensitiveCheck"
+            <CheckBox IsChecked="{Binding CaseSensitive}"
                       Content="Aa"
                       ToolTip.Tip="Respecter la casse"
                       FontSize="10"
                       Margin="0,0,4,0" />
-            <CheckBox Name="WholeWordCheck"
+            <CheckBox IsChecked="{Binding WholeWord}"
                       Content="[ab]"
                       ToolTip.Tip="Mot entier"
                       FontSize="10"
                       Margin="0,0,4,0" />
-            <CheckBox Name="RegexCheck"
+            <CheckBox IsChecked="{Binding UseRegex}"
                       Content=".*"
                       ToolTip.Tip="Expression reguliere"
                       FontSize="10"
                       Margin="0,0,4,0" />
-            <Button Name="ToggleReplaceButton"
-                    Content="&#x25BC; Remplacer"
+            <Button Content="Remplacer"
                     FontSize="10"
                     Height="22"
                     Padding="6,2"
                     ToolTip.Tip="Afficher/masquer le remplacement dans les fichiers"
-                    Click="OnToggleReplaceClick" />
+                    Command="{Binding ToggleReplaceCommand}" />
         </WrapPanel>
 
-        <!-- Replace section (hidden by default) -->
-        <StackPanel Grid.Row="2" Name="ReplaceSection" IsVisible="False" Margin="4,0,4,4">
-            <TextBox Name="ReplacePatternBox"
+        <!-- Replace section -->
+        <StackPanel Grid.Row="2" IsVisible="{Binding ShowReplace}" Margin="4,0,4,4">
+            <TextBox Text="{Binding ReplacePattern, Mode=TwoWay}"
                      Watermark="Remplacer par..."
                      FontSize="12"
                      Margin="0,0,0,4" />
-            <Button Name="ReplaceAllButton"
-                    Content="Tout remplacer dans les fichiers"
+            <Button Content="Tout remplacer dans les fichiers"
                     FontSize="11"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
@@ -60,23 +59,53 @@
                     Click="OnReplaceAllClick" />
         </StackPanel>
 
-        <!-- Results tree -->
+        <!-- Results tree (virtualized) -->
         <TreeView Grid.Row="3"
-                  Name="ResultsTree"
+                  ItemsSource="{Binding ResultGroups}"
                   FontSize="11"
                   Padding="2"
                   DoubleTapped="OnResultDoubleTapped">
+            <TreeView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+            </TreeView.ItemsPanel>
             <TreeView.Styles>
                 <Style Selector="TreeViewItem">
                     <Setter Property="IsExpanded" Value="True" />
                 </Style>
             </TreeView.Styles>
+            <TreeView.ItemTemplate>
+                <TreeDataTemplate ItemsSource="{Binding Matches}">
+                    <!-- File group header -->
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding MatchCount, StringFormat='({0})'}" FontSize="10"
+                                   Foreground="Gray" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding RelativePath}" FontSize="9" Foreground="Gray"
+                                   VerticalAlignment="Center" Margin="4,0,0,0" />
+                    </StackPanel>
+                </TreeDataTemplate>
+            </TreeView.ItemTemplate>
+            <TreeView.DataTemplates>
+                <!-- Match item template -->
+                <DataTemplate DataType="{x:Type models:SearchMatchItem}">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="{Binding Line, StringFormat='L{0}'}"
+                                   FontSize="10" Foreground="DarkCyan"
+                                   VerticalAlignment="Center" Width="40" />
+                        <TextBlock Text="{Binding LineText}"
+                                   FontSize="11"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </DataTemplate>
+            </TreeView.DataTemplates>
         </TreeView>
 
         <!-- Status -->
         <TextBlock Grid.Row="4"
-                   Name="StatusText"
-                   Text=""
+                   Text="{Binding StatusText}"
                    FontSize="10"
                    Foreground="{DynamicResource TextMutedBrush}"
                    Padding="6,4"

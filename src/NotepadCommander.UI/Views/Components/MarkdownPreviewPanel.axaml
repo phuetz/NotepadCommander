@@ -26,6 +26,7 @@
 
             <!-- Content -->
             <ScrollViewer Grid.Row="1"
+                          x:Name="ContentScrollViewer"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
                 <StackPanel x:Name="ContentPanel"

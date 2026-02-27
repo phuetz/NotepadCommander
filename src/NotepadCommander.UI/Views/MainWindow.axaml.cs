@@ -17,6 +17,7 @@ public partial class MainWindow : Window
 {
     private bool _forceClose;
     private WindowState _previousWindowState;
+    private DocumentTabViewModel? _draggedTab;
 
     public MainWindow()
     {
@@ -30,6 +31,14 @@ public partial class MainWindow : Window
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
+
+        // Wire TabBar DragDrop at the container level
+        var tabBar = this.FindControl<ItemsControl>("TabBar");
+        if (tabBar != null)
+        {
+            tabBar.AddHandler(DragDrop.DropEvent, OnTabBarDrop);
+            tabBar.AddHandler(DragDrop.DragOverEvent, OnTabDragOver);
+        }
 
         if (DataContext is ShellViewModel vm)
         {
@@ -47,12 +56,73 @@ public partial class MainWindow : Window
             // Subscribe to method search
             vm.ShowMethodSearchRequested += OnShowMethodSearch;
 
+            // Subscribe to clipboard paste (inline overlay)
+            vm.ClipboardPasteRequested += OnClipboardPasteRequested;
+
+            // Subscribe to copy-to-clipboard
+            vm.CopyToClipboardRequested += OnCopyToClipboardRequested;
+
+            // Auto-focus command palette when visible
+            vm.CommandPalette.PropertyChanged += (_, pe) =>
+            {
+                if (pe.PropertyName == nameof(CommandPaletteViewModel.IsVisible) && vm.CommandPalette.IsVisible)
+                {
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        var input = this.FindControl<TextBox>("CommandPaletteInput");
+                        input?.Focus();
+                    }, DispatcherPriority.Input);
+                }
+            };
+
+            // Auto-focus clipboard filter when visible
+            vm.Clipboard.PropertyChanged += (_, pe) =>
+            {
+                if (pe.PropertyName == nameof(ClipboardHistoryViewModel.IsVisible) && vm.Clipboard.IsVisible)
+                {
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        var input = this.FindControl<TextBox>("ClipboardFilterInput");
+                        input?.Focus();
+                    }, DispatcherPriority.Input);
+                }
+            };
+
+            // Auto-focus go-to-line input when visible
+            vm.PropertyChanged += (_, pe) =>
+            {
+                if (pe.PropertyName == nameof(ShellViewModel.IsGoToLineVisible) && vm.IsGoToLineVisible)
+                {
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        var input = this.FindControl<TextBox>("GoToLineInput");
+                        input?.Focus();
+                    }, DispatcherPriority.Input);
+                }
+            };
+
             // Restore session
             Dispatcher.UIThread.Post(async () =>
             {
                 await vm.RestoreSession();
             });
         }
+    }
+
+    private async void OnClipboardPasteRequested(string text)
+    {
+        var clipboard = GetTopLevel(this)?.Clipboard;
+        if (clipboard != null)
+            await clipboard.SetTextAsync(text);
+        if (DataContext is ShellViewModel vm)
+            vm.PasteCommand.Execute(null);
+    }
+
+    private async void OnCopyToClipboardRequested(string text)
+    {
+        var clipboard = GetTopLevel(this)?.Clipboard;
+        if (clipboard != null)
+            await clipboard.SetTextAsync(text);
     }
 
     private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -91,6 +161,7 @@ public partial class MainWindow : Window
         else if (e.PropertyName == nameof(TabManagerViewModel.ActiveTab))
         {
             UpdateMarkdownPreview();
+            UpdateMarkdownScrollSync();
         }
     }
 
@@ -99,6 +170,7 @@ public partial class MainWindow : Window
         if (e.PropertyName == nameof(ShellViewModel.IsMarkdownPreviewVisible))
         {
             UpdateMarkdownPreview();
+            UpdateMarkdownScrollSync();
         }
     }
 
@@ -175,6 +247,27 @@ public partial class MainWindow : Window
         }
     }
 
+    private void UpdateMarkdownScrollSync()
+    {
+        if (DataContext is not ShellViewModel vm) return;
+        if (!vm.IsMarkdownPreviewVisible) return;
+
+        // Scroll sync is handled via editor scroll events → MarkdownPreview.ScrollToRatio
+        var primaryEditor = this.FindControl<EditorControl>("PrimaryEditor");
+        var preview = this.FindControl<MarkdownPreviewPanel>("MarkdownPreview");
+        if (primaryEditor == null || preview == null) return;
+
+        // Wire primary editor scroll to markdown preview
+        primaryEditor.EditorScrollChanged -= OnEditorScrollForMarkdown;
+        primaryEditor.EditorScrollChanged += OnEditorScrollForMarkdown;
+    }
+
+    private void OnEditorScrollForMarkdown(double ratio)
+    {
+        var preview = this.FindControl<MarkdownPreviewPanel>("MarkdownPreview");
+        preview?.ScrollToRatio(ratio);
+    }
+
     private void OnActiveTabContentChangedForPreview(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName != nameof(DocumentTabViewModel.Content)) return;
@@ -238,6 +331,58 @@ public partial class MainWindow : Window
         }
     }
 
+    // Tab drag-drop reordering
+    private async void OnTabPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        if (sender is not Button { Tag: DocumentTabViewModel tab }) return;
+        if (DataContext is not ShellViewModel vm) return;
+
+        // Only start drag on left mouse button with a small move threshold
+        if (!e.GetCurrentPoint(sender as Visual).Properties.IsLeftButtonPressed) return;
+
+        _draggedTab = tab;
+        vm.TabManager.ActiveTab = tab;
+
+        var data = new DataObject();
+        data.Set("NotepadCommanderTab", tab);
+        await DragDrop.DoDragDrop(e, data, DragDropEffects.Move);
+        _draggedTab = null;
+    }
+
+    private void OnTabDragOver(object? sender, DragEventArgs e)
+    {
+        if (e.Data.Contains("NotepadCommanderTab"))
+            e.DragEffects = DragDropEffects.Move;
+        else
+            e.DragEffects = DragDropEffects.None;
+    }
+
+    private void OnTabBarDrop(object? sender, DragEventArgs e)
+    {
+        if (DataContext is not ShellViewModel vm) return;
+        if (_draggedTab == null) return;
+
+        // Find target button at drop position
+        var tabBar = this.FindControl<ItemsControl>("TabBar");
+        if (tabBar == null) return;
+
+        var pos = e.GetPosition(tabBar);
+        var targetBtn = tabBar.GetVisualDescendants()
+            .OfType<Button>()
+            .FirstOrDefault(b => b.Tag is DocumentTabViewModel && b.Bounds.Contains(pos));
+
+        if (targetBtn?.Tag is DocumentTabViewModel targetTab && targetTab != _draggedTab)
+        {
+            var fromIndex = vm.TabManager.Tabs.IndexOf(_draggedTab);
+            var toIndex = vm.TabManager.Tabs.IndexOf(targetTab);
+            if (fromIndex >= 0 && toIndex >= 0)
+                vm.TabManager.MoveTab(fromIndex, toIndex);
+        }
+    }
+
+    // Keep unused stub to avoid breaking any potential reflection references
+    private void OnTabDrop(object? sender, DragEventArgs e) { }
+
     protected override async void OnClosing(WindowClosingEventArgs e)
     {
         base.OnClosing(e);
@@ -269,7 +414,7 @@ public partial class MainWindow : Window
         Close();
     }
 
-    protected override async void OnKeyDown(KeyEventArgs e)
+    protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
 
@@ -358,7 +503,7 @@ public partial class MainWindow : Window
         // Clipboard history: Ctrl+Shift+V
         if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && e.Key == Key.V)
         {
-            ShowClipboardHistoryPopup(vm);
+            vm.ShowClipboardHistoryCommand.Execute(null);
             e.Handled = true;
             return;
         }
@@ -371,12 +516,27 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Escape closes command palette
-        if (e.Key == Key.Escape && vm.CommandPalette.IsVisible)
+        // Escape closes overlays
+        if (e.Key == Key.Escape)
         {
-            vm.HideCommandPaletteCommand.Execute(null);
-            e.Handled = true;
-            return;
+            if (vm.CommandPalette.IsVisible)
+            {
+                vm.HideCommandPaletteCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+            if (vm.Clipboard.IsVisible)
+            {
+                vm.Clipboard.Hide();
+                e.Handled = true;
+                return;
+            }
+            if (vm.IsGoToLineVisible)
+            {
+                vm.HideGoToLineCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
         }
 
         // Quick open: Ctrl+P
@@ -407,9 +567,93 @@ public partial class MainWindow : Window
             }
         }
 
+        // Go-to-line: Ctrl+G
         if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.G)
         {
-            await ShowGoToLineDialog(vm);
+            vm.ShowGoToLineCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    // Command palette keyboard navigation
+    private void OnCommandPaletteKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (DataContext is not ShellViewModel vm) return;
+
+        if (e.Key == Key.Up)
+        {
+            vm.CommandPalette.MoveUp();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Down)
+        {
+            vm.CommandPalette.MoveDown();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Enter)
+        {
+            vm.CommandPalette.Confirm();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            vm.CommandPalette.Hide();
+            e.Handled = true;
+        }
+    }
+
+    private void OnCommandPaletteDoubleTapped(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is not ShellViewModel vm) return;
+        vm.CommandPalette.Confirm();
+    }
+
+    // Clipboard history keyboard navigation
+    private void OnClipboardHistoryKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (DataContext is not ShellViewModel vm) return;
+
+        if (e.Key == Key.Up)
+        {
+            vm.Clipboard.MoveUp();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Down)
+        {
+            vm.Clipboard.MoveDown();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Enter)
+        {
+            vm.Clipboard.SelectCurrent();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            vm.Clipboard.Hide();
+            e.Handled = true;
+        }
+    }
+
+    private void OnClipboardHistoryDoubleTapped(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is not ShellViewModel vm) return;
+        vm.Clipboard.SelectCurrent();
+    }
+
+    // Go-to-line keyboard handler
+    private void OnGoToLineKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (DataContext is not ShellViewModel vm) return;
+
+        if (e.Key == Key.Enter)
+        {
+            vm.ConfirmGoToLineCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            vm.HideGoToLineCommand.Execute(null);
             e.Handled = true;
         }
     }
@@ -426,66 +670,5 @@ public partial class MainWindow : Window
         // Find the SidePanel in the visual tree and switch to methods tab
         var sidePanel = this.GetVisualDescendants().OfType<SidePanel>().FirstOrDefault();
         sidePanel?.ShowMethodsTab();
-    }
-
-
-    // Clipboard history popup
-    private void ShowClipboardHistoryPopup(ShellViewModel vm)
-    {
-        if (vm.Clipboard.History.Count == 0) return;
-
-        var popup = new Window
-        {
-            Title = "Historique presse-papiers",
-            Width = 400,
-            Height = 300,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false
-        };
-
-        var listBox = new ListBox();
-        foreach (var item in vm.Clipboard.History)
-        {
-            var display = item.Length > 80 ? item[..80] + "..." : item;
-            display = display.Replace("\r\n", " ").Replace("\n", " ");
-            listBox.Items.Add(new ListBoxItem { Content = display, Tag = item });
-        }
-
-        listBox.DoubleTapped += async (_, _) =>
-        {
-            if (listBox.SelectedItem is ListBoxItem { Tag: string text })
-            {
-                var clipboard = GetTopLevel(this)?.Clipboard;
-                if (clipboard != null)
-                    await clipboard.SetTextAsync(text);
-                vm.PasteCommand.Execute(null);
-                popup.Close();
-            }
-        };
-
-        popup.Content = new DockPanel
-        {
-            Margin = new Thickness(8),
-            Children =
-            {
-                listBox
-            }
-        };
-
-        popup.ShowDialog(this);
-    }
-
-    private async Task ShowGoToLineDialog(ShellViewModel vm)
-    {
-        if (vm.TabManager.ActiveTab == null) return;
-
-        var lineCount = vm.TabManager.ActiveTab.Content.Split('\n').Length;
-        var dialog = new GoToLineDialog(lineCount);
-        await dialog.ShowDialog(this);
-
-        if (dialog.SelectedLine.HasValue)
-        {
-            vm.TabManager.ActiveTab.CursorLine = dialog.SelectedLine.Value;
-        }
     }
 }

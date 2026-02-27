@@ -16,6 +16,10 @@ public class EditorEventBridge
     private Action<bool>? _setUpdatingFlag;
     private Func<bool>? _getUpdatingFlag;
 
+    // Ctrl+D: track previous word for progressive selection
+    private string? _lastCtrlDWord;
+    private int _lastCtrlDIndex;
+
     public void Initialize(
         NotepadEditor editor,
         Func<DocumentTabViewModel?> getCurrentVm,
@@ -156,16 +160,40 @@ public class EditorEventBridge
         var doc = _editor.Document;
         string? word;
 
-        if (!_editor.TextArea.Selection.IsEmpty)
-        {
-            word = _editor.SelectedText;
-        }
-        else
+        // First call: select word at caret or use current selection
+        if (_editor.TextArea.Selection.IsEmpty)
         {
             var (start, end) = OccurrenceHighlightRenderer.GetWordBoundsAtOffset(doc, _editor.CaretOffset);
             if (start < 0) return;
             _editor.Select(start, end - start);
             word = doc.GetText(start, end - start);
+            _lastCtrlDWord = word;
+            _lastCtrlDIndex = end;
+        }
+        else
+        {
+            word = _editor.SelectedText;
+
+            // Same word as before? Find next occurrence
+            if (word == _lastCtrlDWord)
+            {
+                var nextIndex = doc.Text.IndexOf(word, _lastCtrlDIndex, StringComparison.Ordinal);
+                if (nextIndex < 0)
+                    nextIndex = doc.Text.IndexOf(word, 0, StringComparison.Ordinal); // wrap around
+
+                if (nextIndex >= 0)
+                {
+                    _editor.Select(nextIndex, word.Length);
+                    _editor.ScrollTo(doc.GetLocation(nextIndex).Line, doc.GetLocation(nextIndex).Column);
+                    _lastCtrlDIndex = nextIndex + word.Length;
+                }
+            }
+            else
+            {
+                // New word selected
+                _lastCtrlDWord = word;
+                _lastCtrlDIndex = _editor.SelectionStart + _editor.SelectionLength;
+            }
         }
 
         if (string.IsNullOrEmpty(word)) return;

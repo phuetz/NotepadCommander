@@ -93,4 +93,51 @@ public class SnippetServiceTests
         Assert.Contains(csSnippets, s => s.Name == "CS1");
         Assert.DoesNotContain(csSnippets, s => s.Name == "PY1");
     }
+
+    [Fact]
+    public void GetCategories_ReturnsDistinctCategories()
+    {
+        _service.Add(new Snippet { Name = "A", Trigger = "a", Content = "x", Category = "Loops" });
+        _service.Add(new Snippet { Name = "B", Trigger = "b", Content = "y", Category = "Loops" });
+        _service.Add(new Snippet { Name = "C", Trigger = "c", Content = "z", Category = "Functions" });
+
+        var categories = _service.GetCategories();
+        Assert.Contains("Loops", categories);
+        Assert.Contains("Functions", categories);
+        Assert.Equal(categories.Count, categories.Distinct().Count());
+    }
+
+    [Fact]
+    public void ExportToJson_ReturnsValidJson()
+    {
+        _service.Add(new Snippet { Name = "Export1", Trigger = "exp1", Content = "content1" });
+
+        var json = _service.ExportToJson();
+        Assert.Contains("Export1", json);
+        Assert.Contains("exp1", json);
+    }
+
+    [Fact]
+    public void ImportFromJson_AddsSnippets()
+    {
+        var json = """[{"Name":"Imported","Trigger":"imp","Content":"imported content","Language":0,"Category":"Test"}]""";
+
+        _service.ImportFromJson(json);
+
+        var all = _service.GetAll();
+        Assert.Contains(all, s => s.Name == "Imported");
+    }
+
+    [Fact]
+    public void ImportFromJson_UpdatesExisting()
+    {
+        _service.Add(new Snippet { Name = "Existing", Trigger = "ex", Content = "old" });
+
+        var json = """[{"Name":"Existing","Trigger":"ex","Content":"new content","Language":0,"Category":"General"}]""";
+        _service.ImportFromJson(json);
+
+        var found = _service.GetAll().FirstOrDefault(s => s.Name == "Existing");
+        Assert.NotNull(found);
+        Assert.Equal("new content", found.Content);
+    }
 }

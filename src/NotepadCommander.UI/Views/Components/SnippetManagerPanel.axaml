@@ -22,6 +22,20 @@
                 </Grid>
             </Border>
 
+            <!-- Filter + category -->
+            <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="8,6,8,4">
+                <TextBox x:Name="FilterBox" Watermark="Filtrer les snippets..." FontSize="11" />
+                <ComboBox x:Name="CategoryFilter" FontSize="11" HorizontalAlignment="Stretch"
+                          SelectionChanged="OnCategoryFilterChanged" />
+            </StackPanel>
+
+            <!-- Import/Export buttons -->
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="4"
+                        Margin="8,0,8,4">
+                <Button Classes="btn-toolbar" Content="Exporter" Click="OnExportClick" Padding="6,2" FontSize="10" />
+                <Button Classes="btn-toolbar" Content="Importer" Click="OnImportClick" Padding="6,2" FontSize="10" />
+            </StackPanel>
+
             <!-- Actions -->
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="4"
                         Margin="8,4" HorizontalAlignment="Right">
@@ -34,6 +48,7 @@
             <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="8,4">
                 <TextBox x:Name="SnippetName" Watermark="Nom" />
                 <TextBox x:Name="SnippetTrigger" Watermark="Declencheur" />
+                <TextBox x:Name="SnippetCategory" Watermark="Categorie" />
                 <TextBox x:Name="SnippetContent" Watermark="Contenu" AcceptsReturn="True"
                          Height="80" TextWrapping="Wrap" />
             </StackPanel>
